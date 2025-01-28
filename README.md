@@ -68,6 +68,7 @@ import os
 load_dotenv()
 
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY") # string of GEMINI_API_KEY or os.getenv("GEMINI_API_KEY")
+
 client = GeminiSwarm(GEMINI_API_KEY=GEMINI_API_KEY)
 
 def transfer_to_agent_b():
