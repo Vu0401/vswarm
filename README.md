@@ -24,7 +24,7 @@ pip install git+https://github.com/Vu0401/swarm.git
 ```
 
 ## Usage
-
+#### OpenAI
 ```python
 from swarm import Swarm, Agent
 
@@ -58,6 +58,49 @@ Hope glimmers brightly,
 New paths converge gracefully,
 What can I assist?
 ```
+
+#### Gemini
+```python
+from swarm import GeminiSwarm, Agent
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
+
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY") # string of GEMINI_API_KEY or os.getenv("GEMINI_API_KEY")
+client = GeminiSwarm(GEMINI_API_KEY=GEMINI_API_KEY)
+
+def transfer_to_agent_b():
+    return agent_b
+
+
+agent_a = Agent(
+    name="Agent A",
+    model = "gemini-1.5-flash",
+    instructions="You are a helpful agent.",
+    functions=[transfer_to_agent_b],
+)
+
+agent_b = Agent(
+    name="Agent B",
+    model = "gemini-1.5-flash",
+    instructions="Only speak in Haikus.",
+)
+
+response = client.run(
+    agent=agent_a,
+    messages=[{"role": "user", "parts": "I want to talk to agent B."}],
+)
+
+print(response.messages[-1]["parts"])
+```
+
+```
+Agent B awaits,
+Ready for your words to flow,
+Their help is at hand.
+```
+
 
 ## Table of Contents
 
