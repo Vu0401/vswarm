@@ -26,7 +26,7 @@ pip install git+https://github.com/Vu0401/swarm.git
 ## Usage
 #### OpenAI
 ```python
-from swarm import Swarm, Agent
+from swarm import OpenAISwarm, Agent
 
 client = OpenAISwarm()
 
@@ -151,7 +151,7 @@ Check out `/examples` for inspiration! Learn more about each one in its README.
 Start by instantiating a Swarm client (which internally just instantiates an `OpenAI` client).
 
 ```python
-from swarm import Swarm
+from swarm import OpenAISwarm
 
 client = OpenAISwarm()
 ```
