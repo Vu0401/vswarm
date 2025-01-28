@@ -8,7 +8,7 @@ from configs.general import Colors, tasks_path
 # This class represents the main control unit for deploying and managing tasks within the swarm system.
 
 
-class Swarm:
+class OpenAISwarm:
     def __init__(self, engine_name, tasks=[], persist=False):
         self.tasks = tasks
         self.engine_name = engine_name
