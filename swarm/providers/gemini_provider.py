@@ -8,7 +8,7 @@ import google.generativeai as genai
 from google.ai.generativelanguage_v1beta.types import content
 from google.generativeai.types import content_types
 
-from ..core import OpenAISwarm
+from ..core import Swarm
 from ..util import debug_print
 from ..types import (
     Agent,
