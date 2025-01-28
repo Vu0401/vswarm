@@ -7,7 +7,7 @@ from .types import (
     Result
 )
 
-class Swarm(ABC):
+class OpenAISwarm(ABC):
     @abstractmethod
     def get_chat_completion(
         self,

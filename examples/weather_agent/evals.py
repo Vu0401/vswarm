@@ -1,4 +1,4 @@
-from swarm import Swarm
+from swarm import OpenAISwarm
 from agents import weather_agent
 import pytest
 

@@ -1,4 +1,4 @@
-from .core import Swarm
+from .core import OpenAISwarm
 from .providers.openai_provider import OpenAISwarm
 from .providers.gemini_provider import GeminiSwarm
 from .types import Agent, Response

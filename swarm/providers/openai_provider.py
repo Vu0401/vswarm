@@ -5,7 +5,7 @@ from typing import List, Callable, Union
 
 from openai import OpenAI
 
-from ..core import Swarm
+from ..core import OpenAISwarm
 from ..util import function_to_json, debug_print, merge_chunk
 from ..types import (
     Agent,
