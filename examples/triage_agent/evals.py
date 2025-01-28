@@ -4,7 +4,7 @@ from evals_util import evaluate_with_llm_bool, BoolEvalResult
 import pytest
 import json
 
-client = Swarm()
+client = OpenAISwarm()
 
 CONVERSATIONAL_EVAL_SYSTEM_PROMPT = """
 You will be provided with a conversation between a user and an agent, as well as a main goal for the conversation.

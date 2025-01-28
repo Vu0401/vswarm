@@ -60,7 +60,7 @@ def pretty_print_messages(messages) -> None:
 def run_demo_loop(
     starting_agent, context_variables=None, stream=False, debug=False
 ) -> None:
-    client = Swarm()
+    client = OpenAISwarm()
     print("Starting Swarm CLI 🐝")
 
     messages = []
