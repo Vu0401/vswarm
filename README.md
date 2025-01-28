@@ -28,7 +28,7 @@ pip install git+https://github.com/Vu0401/swarm.git
 ```python
 from swarm import Swarm, Agent
 
-client = Swarm()
+client = OpenAISwarm()
 
 def transfer_to_agent_b():
     return agent_b
@@ -110,7 +110,7 @@ Start by instantiating a Swarm client (which internally just instantiates an `Op
 ```python
 from swarm import Swarm
 
-client = Swarm()
+client = OpenAISwarm()
 ```
 
 ### `client.run()`
