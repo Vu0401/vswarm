@@ -14,13 +14,13 @@ An educational framework exploring ergonomic, lightweight multi-agent orchestrat
 Requires Python 3.10+
 
 ```shell
-pip install git+ssh://git@github.com/openai/swarm.git
+pip install git+ssh://git@github.com/Vu0401/swarm.git
 ```
 
 or
 
 ```shell
-pip install git+https://github.com/openai/swarm.git
+pip install git+https://github.com/Vu0401/swarm.git
 ```
 
 ## Usage
