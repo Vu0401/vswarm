@@ -12,6 +12,8 @@ An educational framework exploring ergonomic, lightweight multi-agent orchestrat
 ## Supported Providers
 - OpenAI
 - Gemini (newly added)
+- HuggingFace (coming soon)
+- Ollama (coming soon)
 
 ## Install
 
