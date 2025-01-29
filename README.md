@@ -24,8 +24,9 @@ or
 pip install git+https://github.com/Vu0401/vswarm.git
 ```
 
-Ensure you have Ollama installed if you plan to use Ollama models. Download and follow the installation instructions from the [official website](https://ollama.com).
-If using an Ollama model, pull the required model before running:
+Make sure you have Ollama installed if you plan to use Ollama models. You can download Ollama and follow the installation instructions from the [official website](https://ollama.com).
+
+After installing Ollama, launch it and use the following command to pull the required model:
 
 ```shell
 ollama pull deepseek-r1:1.5b
