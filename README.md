@@ -2,7 +2,8 @@
 
 # Vswarm (Extended version of Swarm)
 
-An educational framework exploring ergonomic, lightweight multi-agent orchestration.
+An educational framework exploring ergonomic, lightweight multi-agent orchestration with integrated support for multiple providers, including OpenAI, Gemini, and Ollama.
+
 
 ## Providers
 - OpenAI (newly added)
