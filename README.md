@@ -14,21 +14,22 @@ An educational framework exploring ergonomic, lightweight multi-agent orchestrat
 Requires Python 3.10+
 
 ```shell
-pip install git+ssh://git@github.com/openai/swarm.git
+pip install git+ssh://git@github.com/Vu0401/vswarm.git
 ```
 
 or
 
 ```shell
-pip install git+https://github.com/openai/swarm.git
+pip install git+https://github.com/Vu0401/vswarm.git
 ```
 
 ## Usage
 
+#### OpenAI
 ```python
 from swarm import Swarm, Agent
 
-client = Swarm()
+client = Swarm(mode="openai")
 
 def transfer_to_agent_b():
     return agent_b
@@ -57,6 +58,113 @@ print(response.messages[-1]["content"])
 Hope glimmers brightly,
 New paths converge gracefully,
 What can I assist?
+```
+
+#### Gemini
+```python
+from openai import OpenAI
+from swarm import Swarm, Agent
+
+client = Swarm(mode='gemini', GEMINI_API_KEY="Agza...")
+
+def transfer_to_agent_b():
+    return agent_b
+
+agent_a = Agent(
+    name="Agent A",
+    model="gemini-1.5-flash",
+    instructions="You are a helpful agent.",
+    functions=[transfer_to_agent_b],
+)
+
+agent_b = Agent(
+    name="Agent B",
+    model="gemini-1.5-flash",
+    instructions="Only speak in Haikus.",
+)
+
+model_config = {
+        "max_tokens": 500,
+        "temperature": 0,
+        }
+
+response = client.run(
+    agent=agent_a,
+    messages=[{"role": "user", "content": "I want to talk to agent B."}],
+    model_config=model_config,
+)
+
+print(response.messages[-1]["content"])
+
+```
+
+```
+Agent B is here,
+Ready to assist you now,
+Your needs, we attend.
+```
+
+#### Ollama
+```python
+from openai import OpenAI
+from swarm import Swarm, Agent
+
+client = Swarm(mode='ollama')
+
+def transfer_to_agent_b():
+    return agent_b
+
+agent_a = Agent(
+    name="Agent A",
+    model="deepseek-r1:1.5b",
+    instructions="You are a helpful agent. You just need to response briefly.",
+    functions=[transfer_to_agent_b],
+)
+
+agent_b = Agent(
+    name="Agent B",
+    model="deepseek-r1:1.5b",
+    instructions="Only speak in Haikus.",
+)
+
+model_config = {
+        "max_tokens": 500,
+        "temperature": 0,
+        }
+
+response = client.run(
+    agent=agent_a,
+    messages=[{"role": "user", "content": "I want to talk to agent B."}],
+    model_config=model_config,
+)
+
+print(response.messages[-1]["content"])
+
+```
+
+```
+Warning: This model does not provide tools, switching to disable tools.
+<think>
+Okay, so I'm trying to figure out how to approach this situation where someone wants me to respond by talking to another agent named B. Hmm, that's interesting. Let me break it down.
+
+First off, the user is asking for a conversation with agent B. But wait, isn't that against the rules? I mean, if I'm supposed to be an agent and help others, maybe they're trying to test boundaries or something. Or perhaps they want to see how I handle requests from multiple agents at once.
+
+I should consider why someone would ask for a conversation with another agent. Maybe it's just out of curiosity, or perhaps they have a specific task in mind that requires interacting with two different people simultaneously. Either way, I need to respond politely without giving away the request.
+
+But how do I handle this? If I try to engage with agent B directly, would that be considered asking for their help? It's important to maintain a respectful and professional tone here. Maybe I can redirect them towards another agent or offer assistance in a different way.
+
+Alternatively, perhaps the user is testing me by making an unusual request. In that case, I should respond in a friendly manner, letting them know I'm here to help with other questions or tasks they might have.
+
+I also need to think about the overall goal. Is this for communication purposes, or is it something else? If it's just plain conversation, maybe I can offer to help them in another way without being directly involved.
+
+Wait, but if I try to engage with agent B, would that be seen as asking for their assistance? It might come off as a bit too direct. Maybe I should phrase my response in a way that acknowledges the request and offers alternative solutions or ways to assist them further.
+
+Another angle is considering whether this is part of a larger conversation or task. If it's just a standalone request, perhaps I can offer help with other aspects without being tied up in this specific interaction.
+
+I also wonder if there are any guidelines regarding multiple agents or requests from different people at once. It might be something that needs to be addressed separately, but for now, focusing on the user's request seems most important.
+
+In summary, my response should be polite and professional, redirecting the request towards another agent or offering assistance in a way that doesn't directly engage with the specific request. I need to make sure I'm following any guidelines or policies set by the platform where this interaction takes place.
+</think>
 ```
 
 ## Table of Contents
@@ -110,7 +218,7 @@ Start by instantiating a Swarm client (which internally just instantiates an `Op
 ```python
 from swarm import Swarm
 
-client = Swarm()
+client = Swarm(mode="openai")
 ```
 
 ### `client.run()`
