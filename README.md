@@ -67,19 +67,26 @@ What can I assist?
 
 #### Gemini
 ```python
+from openai import OpenAI
+import inspect
 from swarm import GeminiSwarm, Agent
 from dotenv import load_dotenv
 import os
 
 load_dotenv()
 
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY") # string of GEMINI_API_KEY or os.getenv("GEMINI_API_KEY")
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+
+# client = OpenAI(
+#     api_key=GEMINI_API_KEY,
+#     base_url="https://generativelanguage.googleapis.com/v1beta/openai/"
+# )
+
 
 client = GeminiSwarm(GEMINI_API_KEY=GEMINI_API_KEY)
 
 def transfer_to_agent_b():
     return agent_b
-
 
 agent_a = Agent(
     name="Agent A",
@@ -96,16 +103,16 @@ agent_b = Agent(
 
 response = client.run(
     agent=agent_a,
-    messages=[{"role": "user", "parts": "I want to talk to agent B."}],
+    messages=[{"role": "user", "content": "I want to talk to agent B."}],
 )
 
-print(response.messages[-1]["parts"])
+print(response.messages[-1]["content"])
 ```
 
 ```
-Agent B awaits,
-Ready for your words to flow,
-Their help is at hand.
+Agent B is here,
+Ready to help you.  Speak now.
+Your needs, I attend.
 ```
 
 
