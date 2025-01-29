@@ -55,9 +55,15 @@ agent_b = Agent(
     instructions="Only speak in Haikus.",
 )
 
+model_config = {
+        "max_tokens": 500,
+        "temperature": 0,
+        }
+
 response = client.run(
     agent=agent_a,
     messages=[{"role": "user", "content": "I want to talk to agent B."}],
+    model_config=model_config
 )
 
 print(response.messages[-1]["content"])
