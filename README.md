@@ -29,7 +29,7 @@ Make sure you have Ollama installed if you plan to use Ollama models. You can do
 After installing Ollama, launch it and use the following command to pull the required model:
 
 ```shell
-ollama pull deepseek-r1:1.5b
+ollama pull llama3.2:1b
 ```
 
 ## Usage
@@ -132,15 +132,15 @@ def transfer_to_agent_b():
 
 agent_a = Agent(
     name="Agent A",
-    model="deepseek-r1:1.5b",
-    instructions="You are a helpful agent. You just need to response briefly.",
+    model="llama3.2:1b",
+    instructions="You are a helpful agent. If user want to talk to agent B then immediately call tool transfer_to_agent_b",
     functions=[transfer_to_agent_b],
 )
 
 agent_b = Agent(
     name="Agent B",
-    model="deepseek-r1:1.5b",
-    instructions="Only speak in Haikus.",
+    model="qwen2.5:1.5b",
+    instructions="You are agent B. Only speak in Haikus.",
 )
 
 model_config = {
@@ -156,37 +156,13 @@ response = client.run(
 
 print(response.messages[-1]["content"])
 
-```
 
 ```
-[WARNING]: This model does not support tools. Switching to tool-disabled mode.
-<think>
-Okay, so I need to figure out how to approach this situation where someone is asking me to talk to another agent, B. Hmm, first off, I should probably understand the context of why they're reaching out. Is it just random, or is there something specific about them that I can infer? Maybe they're testing my ability to handle multiple requests at once or are trying to see how well I can manage different interactions.
 
-I wonder if this is part of a larger project or if it's just an isolated case. If it's part of a bigger system, maybe B has a specific role or responsibility that I need to be aware of. But since the user hasn't provided any additional details, I'll have to work with what I have.
-
-I should consider how to respond appropriately. Maybe I can acknowledge their request and offer assistance in another way. Perhaps they're looking for help with something else, like providing information or solving a problem. Alternatively, if B has specific guidelines or procedures, I might need to follow those rather than just responding out of the blue.
-
-Also, I should think about whether there's any potential conflict or misunderstanding that could arise from my response. It's important to be clear and concise so that they can understand exactly what I'm offering without confusion.
-
-I guess another angle is to consider if this interaction is part of a testing phase for B. Maybe the user wants to see how well I can handle multiple requests simultaneously, which would require me to provide a more detailed response than just a simple "yes" or "no."
-
-Overall, my goal is to respond in a way that's helpful and respectful, ensuring that I'm providing the best assistance possible while respecting any boundaries or guidelines set by B.
-</think>
-
-Certainly! Here's a structured and organized response based on the thought process:
-
----
-
-**Response:**
-
-I understand your request. To ensure clarity and respect, I will provide assistance in another way. If you need help with something specific, feel free to ask. I'm here to support you in any manner possible.
-
-If you have any questions or need information, please let me know. I'll do my best to assist you effectively.
-
----
-
-This response acknowledges the request, offers alternative assistance, and maintains a respectful tone while being clear about the potential for further interaction.
+```
+Echoes of your call,  
+Agent B stands by, ready to chat,
+Whispers in the night.
 ```
 
 ## Table of Contents
