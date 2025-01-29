@@ -6,9 +6,9 @@ An educational framework exploring ergonomic, lightweight multi-agent orchestrat
 
 
 ## Providers
-- OpenAI (newly added)
-- Gemini (newly added)
-- Ollama (newly added)
+- **OpenAI** – *Newly Added*
+- **Gemini** – *Newly Added*
+- **Ollama** – *Newly Added*
 
 ## Install
 
