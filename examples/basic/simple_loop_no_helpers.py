@@ -1,6 +1,6 @@
 from swarm import OpenAISwarm, Agent
 
-client = OpenAISwarm()
+client = Swarm()
 
 my_agent = Agent(
     name="Agent",

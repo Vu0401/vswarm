@@ -2,7 +2,7 @@ from swarm import OpenAISwarm
 from agents import weather_agent
 import pytest
 
-client = OpenAISwarm()
+client = Swarm()
 
 
 def run_and_get_tool_calls(agent, query):

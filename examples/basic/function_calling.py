@@ -1,6 +1,6 @@
 from swarm import OpenAISwarm, Agent
 
-client = OpenAISwarm()
+client = Swarm()
 
 
 def get_weather(location) -> str:

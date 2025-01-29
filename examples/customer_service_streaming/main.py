@@ -15,7 +15,7 @@ def main():
     except:
         raise Exception("Validation failed")
 
-    swarm = OpenAISwarm(
+    swarm = Swarm(
         engine_name=engine_name, persist=persist)
 
     if args.test is not None:
@@ -24,7 +24,7 @@ def main():
             test_file_paths = [f"{test_root}/{test_file}"]
         else:
             test_file_paths = [f"{test_root}/{file}" for file in test_files]
-        swarm = OpenAISwarm(engine_name='local')
+        swarm = Swarm(engine_name='local')
         swarm.deploy(test_mode=True, test_file_paths=test_file_paths)
 
     elif args.input:
