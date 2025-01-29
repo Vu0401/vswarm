@@ -9,6 +9,11 @@ An educational framework exploring ergonomic, lightweight multi-agent orchestrat
 >
 > The primary goal of Swarm is to showcase the handoff & routines patterns explored in the [Orchestrating Agents: Handoffs & Routines](https://cookbook.openai.com/examples/orchestrating_agents) cookbook. It is not meant as a standalone library, and is primarily for educational purposes.
 
+## Provider
+- OpenAI
+- Gemini
+- Ollama
+
 ## Install
 
 Requires Python 3.10+
