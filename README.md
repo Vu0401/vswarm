@@ -1,13 +1,14 @@
 ![Swarm Logo](assets/logo.png)
 
-# Swarm (experimental, educational)
+# Vswarm (Extended version of Swarm)
 
-An educational framework exploring ergonomic, lightweight multi-agent orchestration.
+An educational framework exploring ergonomic, lightweight multi-agent orchestration with integrated support for multiple providers, including OpenAI, Gemini, and Ollama.
 
-> [!WARNING]
-> Swarm is currently an experimental sample framework intended to explore ergonomic interfaces for multi-agent systems. It is not intended to be used in production, and therefore has no official support. (This also means we will not be reviewing PRs or issues!)
->
-> The primary goal of Swarm is to showcase the handoff & routines patterns explored in the [Orchestrating Agents: Handoffs & Routines](https://cookbook.openai.com/examples/orchestrating_agents) cookbook. It is not meant as a standalone library, and is primarily for educational purposes.
+
+## Providers
+- OpenAI (newly added)
+- Gemini (newly added)
+- Ollama (newly added)
 
 ## Install
 
@@ -21,6 +22,13 @@ or
 
 ```shell
 pip install git+https://github.com/Vu0401/vswarm.git
+```
+
+Ensure you have Ollama installed if you plan to use Ollama models. Download and follow the installation instructions from the [official website](https://ollama.com).
+If using an Ollama model, pull the required model before running:
+
+```shell
+ollama pull deepseek-r1:1.5b
 ```
 
 ## Usage
@@ -105,6 +113,7 @@ Your needs, we attend.
 ```
 
 #### Ollama
+
 ```python
 from openai import OpenAI
 from swarm import Swarm, Agent
@@ -145,26 +154,32 @@ print(response.messages[-1]["content"])
 ```
 Warning: This model does not provide tools, switching to disable tools.
 <think>
-Okay, so I'm trying to figure out how to approach this situation where someone wants me to respond by talking to another agent named B. Hmm, that's interesting. Let me break it down.
+Okay, so I need to figure out how to approach this situation where someone is asking me to talk to another agent, B. Hmm, first off, I should probably understand the context of why they're reaching out. Is it just random, or is there something specific about them that I can infer? Maybe they're testing my ability to handle multiple requests at once or are trying to see how well I can manage different interactions.
 
-First off, the user is asking for a conversation with agent B. But wait, isn't that against the rules? I mean, if I'm supposed to be an agent and help others, maybe they're trying to test boundaries or something. Or perhaps they want to see how I handle requests from multiple agents at once.
+I wonder if this is part of a larger project or if it's just an isolated case. If it's part of a bigger system, maybe B has a specific role or responsibility that I need to be aware of. But since the user hasn't provided any additional details, I'll have to work with what I have.
 
-I should consider why someone would ask for a conversation with another agent. Maybe it's just out of curiosity, or perhaps they have a specific task in mind that requires interacting with two different people simultaneously. Either way, I need to respond politely without giving away the request.
+I should consider how to respond appropriately. Maybe I can acknowledge their request and offer assistance in another way. Perhaps they're looking for help with something else, like providing information or solving a problem. Alternatively, if B has specific guidelines or procedures, I might need to follow those rather than just responding out of the blue.
 
-But how do I handle this? If I try to engage with agent B directly, would that be considered asking for their help? It's important to maintain a respectful and professional tone here. Maybe I can redirect them towards another agent or offer assistance in a different way.
+Also, I should think about whether there's any potential conflict or misunderstanding that could arise from my response. It's important to be clear and concise so that they can understand exactly what I'm offering without confusion.
 
-Alternatively, perhaps the user is testing me by making an unusual request. In that case, I should respond in a friendly manner, letting them know I'm here to help with other questions or tasks they might have.
+I guess another angle is to consider if this interaction is part of a testing phase for B. Maybe the user wants to see how well I can handle multiple requests simultaneously, which would require me to provide a more detailed response than just a simple "yes" or "no."
 
-I also need to think about the overall goal. Is this for communication purposes, or is it something else? If it's just plain conversation, maybe I can offer to help them in another way without being directly involved.
-
-Wait, but if I try to engage with agent B, would that be seen as asking for their assistance? It might come off as a bit too direct. Maybe I should phrase my response in a way that acknowledges the request and offers alternative solutions or ways to assist them further.
-
-Another angle is considering whether this is part of a larger conversation or task. If it's just a standalone request, perhaps I can offer help with other aspects without being tied up in this specific interaction.
-
-I also wonder if there are any guidelines regarding multiple agents or requests from different people at once. It might be something that needs to be addressed separately, but for now, focusing on the user's request seems most important.
-
-In summary, my response should be polite and professional, redirecting the request towards another agent or offering assistance in a way that doesn't directly engage with the specific request. I need to make sure I'm following any guidelines or policies set by the platform where this interaction takes place.
+Overall, my goal is to respond in a way that's helpful and respectful, ensuring that I'm providing the best assistance possible while respecting any boundaries or guidelines set by B.
 </think>
+
+Certainly! Here's a structured and organized response based on the thought process:
+
+---
+
+**Response:**
+
+I understand your request. To ensure clarity and respect, I will provide assistance in another way. If you need help with something specific, feel free to ask. I'm here to support you in any manner possible.
+
+If you have any questions or need information, please let me know. I'll do my best to assist you effectively.
+
+---
+
+This response acknowledges the request, offers alternative assistance, and maintains a respectful tone while being clear about the potential for further interaction.
 ```
 
 ## Table of Contents
