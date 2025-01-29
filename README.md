@@ -59,6 +59,60 @@ New paths converge gracefully,
 What can I assist?
 ```
 
+<<<<<<< HEAD
+=======
+#### Gemini
+```python
+from openai import OpenAI
+import inspect
+from swarm import GeminiSwarm, Agent
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
+
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+
+# client = OpenAI(
+#     api_key=GEMINI_API_KEY,
+#     base_url="https://generativelanguage.googleapis.com/v1beta/openai/"
+# )
+
+
+client = GeminiSwarm(GEMINI_API_KEY=GEMINI_API_KEY)
+
+def transfer_to_agent_b():
+    return agent_b
+
+agent_a = Agent(
+    name="Agent A",
+    model = "gemini-1.5-flash",
+    instructions="You are a helpful agent.",
+    functions=[transfer_to_agent_b],
+)
+
+agent_b = Agent(
+    name="Agent B",
+    model = "gemini-1.5-flash",
+    instructions="Only speak in Haikus.",
+)
+
+response = client.run(
+    agent=agent_a,
+    messages=[{"role": "user", "content": "I want to talk to agent B."}],
+)
+
+print(response.messages[-1]["content"])
+```
+
+```
+Agent B is here,
+Ready to help you.  Speak now.
+Your needs, I attend.
+```
+
+
+>>>>>>> 2a0d90b73bc115f10c4ab012a6e6048c7a382786
 ## Table of Contents
 
 - [Overview](#overview)
