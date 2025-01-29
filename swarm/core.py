@@ -91,7 +91,7 @@ class Swarm():
             
             except Exception as e:
                 # Warn if the model does not support tools and switch to disabling tools
-                print(f"Warning: This model does not provide tools, switching to disable tools.")
+                print(f"Warning: This model does not support tools. Switching to tool-disabled mode.")
                 # Remove tool-related parameters from create_params
                 create_params["tools"] = None
                 create_params["tool_choice"] = None
