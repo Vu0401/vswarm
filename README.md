@@ -2,13 +2,13 @@
 
 # Vswarm (Extended version of Swarm)
 
-An educational framework exploring ergonomic, lightweight multi-agent orchestration with integrated support for multiple providers, including OpenAI, Gemini, and Ollama.
+An educational framework exploring ergonomic, lightweight multi-agent orchestration with integrated support for multiple providers (including **OpenAI**, **Gemini**, and **Ollama**).
 
 
 ## Providers
-- OpenAI (newly added)
-- Gemini (newly added)
-- Ollama (newly added)
+- **OpenAI** – *Default*
+- **Gemini** – *Newly Added*
+- **Ollama** – *Newly Added*
 
 ## Install
 
@@ -24,8 +24,9 @@ or
 pip install git+https://github.com/Vu0401/vswarm.git
 ```
 
-Ensure you have Ollama installed if you plan to use Ollama models. Download and follow the installation instructions from the [official website](https://ollama.com).
-If using an Ollama model, pull the required model before running:
+Make sure you have Ollama installed if you plan to use Ollama models. You can download Ollama and follow the installation instructions from the [official website](https://ollama.com).
+
+After installing Ollama, launch it and use the following command to pull the required model:
 
 ```shell
 ollama pull deepseek-r1:1.5b
@@ -152,7 +153,7 @@ print(response.messages[-1]["content"])
 ```
 
 ```
-Warning: This model does not support tools. Switching to tool-disabled mode.
+[WARNING]: This model does not support tools. Switching to tool-disabled mode.
 <think>
 Okay, so I need to figure out how to approach this situation where someone is asking me to talk to another agent, B. Hmm, first off, I should probably understand the context of why they're reaching out. Is it just random, or is there something specific about them that I can infer? Maybe they're testing my ability to handle multiple requests at once or are trying to see how well I can manage different interactions.
 
