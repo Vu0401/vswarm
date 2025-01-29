@@ -153,7 +153,7 @@ print(response.messages[-1]["content"])
 ```
 
 ```
-**[WARNING]:** This model does not support tools. Switching to tool-disabled mode.
+#### [WARNING]: This model does not support tools. Switching to tool-disabled mode.
 <think>
 Okay, so I need to figure out how to approach this situation where someone is asking me to talk to another agent, B. Hmm, first off, I should probably understand the context of why they're reaching out. Is it just random, or is there something specific about them that I can infer? Maybe they're testing my ability to handle multiple requests at once or are trying to see how well I can manage different interactions.
 
