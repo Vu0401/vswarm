@@ -213,6 +213,13 @@ Check out `/examples` for inspiration! Learn more about each one in its README.
 
 Start by instantiating a Swarm client (which internally just instantiates an `OpenAI` client).
 
+#### Arguments
+
+| Argument              | Type    | Description                                                                                                                                      | Default              |
+| --------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------ | --------------       |
+| **mode**             | `str` | The mode for providers including `openai`, `gemini` and `ollama`                                                                                   | (required)            |
+| **gemini_api_key**   | `str` | API key for `gemini` mode, available at [AI Studio](https://aistudio.google.com).                                                                  | (required for gemini) |
+
 ```python
 from swarm import Swarm
 
