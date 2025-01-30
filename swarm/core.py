@@ -64,8 +64,9 @@ class Swarm():
         try:
             response = completion(**create_params)
             return response
-        except Exception:
-            raise RuntimeError("This model either does not provide tools or may occasionally fail to call tools due to its limitations.")
+        except:
+            error_message = "Please verify that an API key is provided. Alternatively, there may have been an error during the tool call process due to model limitations."
+            raise ValueError(error_message)
         
     def handle_function_result(self, result, debug) -> Result: 
         match result:
