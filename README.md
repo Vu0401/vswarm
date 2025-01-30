@@ -37,36 +37,43 @@ ollama pull llama3.2:1b
 #### OpenAI
 ```python
 from swarm import Swarm, Agent
+import os
 
-client = Swarm(provider="openai")
+os.environ["OPENAI_API_KEY"] = "your-openai-key"
+
+client = Swarm()
 
 def transfer_to_agent_b():
     return agent_b
 
-
 agent_a = Agent(
     name="Agent A",
+    model="openai/gpt-4o",
     instructions="You are a helpful agent.",
     functions=[transfer_to_agent_b],
+    model_config={
+            "max_tokens": 30,
+            "temperature": 0,
+            }
 )
 
 agent_b = Agent(
     name="Agent B",
+    model="openai/gpt-4o",
     instructions="Only speak in Haikus.",
+    model_config={
+            "max_tokens": 30,
+            "temperature": 0,
+            }
 )
-
-model_config = {
-        "max_tokens": 500,
-        "temperature": 0,
-        }
 
 response = client.run(
     agent=agent_a,
     messages=[{"role": "user", "content": "I want to talk to agent B."}],
-    model_config=model_config
 )
 
 print(response.messages[-1]["content"])
+
 ```
 
 ```
@@ -79,34 +86,39 @@ What can I assist?
 ```python
 from openai import OpenAI
 from swarm import Swarm, Agent
+import os
 
-client = Swarm(provider='gemini', GEMINI_API_KEY="Agza...")
+os.environ["GEMINI_API_KEY"] = "your-gemini-key"
+
+client = Swarm()
 
 def transfer_to_agent_b():
     return agent_b
 
 agent_a = Agent(
     name="Agent A",
-    model="gemini-1.5-flash",
-    instructions="You are a helpful agent.",
+    model="gemini/gemini-1.5-flash",
+    instructions="You are a helpful assistant. If the user wants to talk to Agent B, transfer them to Agent B immediately.",
     functions=[transfer_to_agent_b],
+    model_config={
+            "max_tokens": 30,
+            "temperature": 0,
+            }
 )
 
 agent_b = Agent(
     name="Agent B",
-    model="gemini-1.5-flash",
+    model="gemini/gemini-1.5-flash",
     instructions="Only speak in Haikus.",
+    model_config={
+            "max_tokens": 30,
+            "temperature": 0,
+            }
 )
-
-model_config = {
-        "max_tokens": 500,
-        "temperature": 0,
-        }
 
 response = client.run(
     agent=agent_a,
     messages=[{"role": "user", "content": "I want to talk to agent B."}],
-    model_config=model_config,
 )
 
 print(response.messages[-1]["content"])
@@ -119,50 +131,52 @@ Ready to assist you now,
 Your needs, we attend.
 ```
 
-#### Ollama
+#### Custom
 
 ```python
 from openai import OpenAI
 from swarm import Swarm, Agent
+import os
 
-client = Swarm(provider='ollama')
+client = Swarm()
 
 def transfer_to_agent_b():
     return agent_b
 
 agent_a = Agent(
     name="Agent A",
-    model="llama3.2:1b",
+    model="ollama/llama3.2:1b",
     instructions="You are a helpful agent. If user want to talk to agent B then immediately call tool transfer_to_agent_b",
     functions=[transfer_to_agent_b],
+    model_config={
+        "max_tokens": 30,
+        "temperature": 0,
+        }
 )
 
 agent_b = Agent(
     name="Agent B",
-    model="qwen2.5:1.5b",
+    model="ollama/qwen2.5:1.5b",
     instructions="You are agent B. Only speak in Haikus.",
-)
-
-model_config = {
-        "max_tokens": 500,
+    model_config={
+        "max_tokens": 30,
         "temperature": 0,
         }
+)
 
 response = client.run(
     agent=agent_a,
     messages=[{"role": "user", "content": "I want to talk to agent B."}],
-    model_config=model_config,
 )
 
 print(response.messages[-1]["content"])
 
-
 ```
 
 ```
-Echoes of your call,  
-Agent B stands by, ready to chat,
-Whispers in the night.
+Clouds drift, leaves whispering,
+Whisper of the wind's gentle breeze.
+Silence, where thoughts unfurl
 ```
 
 ## Table of Contents
@@ -213,17 +227,10 @@ Check out `/examples` for inspiration! Learn more about each one in its README.
 
 Start by instantiating a Swarm client (which internally just instantiates an `OpenAI` client).
 
-#### Arguments
-
-| Argument              | Type    | Description                                                                                                                                      | Default              |
-| --------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------| ---------------       |
-| **provider**             | `str` | The provider for providers including `openai`, `gemini` and `ollama`                                                                           | (required)            |
-| **gemini_api_key**   | `str` | API key for `gemini` provider, available at [AI Studio](https://aistudio.google.com).                                                              | (required for gemini) |
-
 ```python
 from swarm import Swarm
 
-client = Swarm(provider="openai")
+client = Swarm()
 ```
 
 ### `client.run()`
@@ -250,7 +257,6 @@ At its core, Swarm's `client.run()` implements the following loop:
 | **execute_tools**     | `bool`  | If `False`, interrupt execution and immediately returns `tool_calls` message when an Agent tries to call a function                                    | `True`         |
 | **stream**            | `bool`  | If `True`, enables streaming responses                                                                                                                 | `False`        |
 | **debug**             | `bool`  | If `True`, enables debug logging                                                                                                                       | `False`        |
-| **model_config**      | `dict`  | Configuration for the model, identical to [API Chat Completions body requests](https://platform.openai.com/docs/api-reference/chat/create).            | `{}`   
 
 
 Once `client.run()` is finished (after potentially multiple calls to agents and tools) it will return a `Response` containing all the relevant updated state. Specifically, the new `messages`, the last `Agent` to be called, and the most up-to-date `context_variables`. You can pass these values (plus new user messages) in to your next execution of `client.run()` to continue the interaction where it left off – much like `chat.completions.create()`. (The `run_demo_loop` function implements an example of a full execution loop in `/swarm/repl/repl.py`.)
@@ -278,6 +284,7 @@ While it's tempting to personify an `Agent` as "someone who does X", it can also
 | **instructions** | `str` or `func() -> str` | Instructions for the agent, can be a string or a callable returning a string. | `"You are a helpful agent."` |
 | **functions**    | `List`                   | A list of functions that the agent can call.                                  | `[]`                         |
 | **tool_choice**  | `str`                    | The tool choice for the agent, if any.                                        | `None`                       |
+| **model_config** | `dict`                   | Configuration for the model, identical to [API Chat Completions body requests](https://platform.openai.com/docs/api-reference/chat/create).  |   
 
 ### Instructions
 
