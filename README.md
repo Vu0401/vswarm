@@ -2,7 +2,7 @@
 
 # Vswarm (Extended version of Swarm)
 
-An educational framework exploring ergonomic, lightweight multi-agent orchestration with integrated support for multiple providers from `litellm` (including **OpenAI**, **Gemini**, **Ollama** and other provider). 
+An educational framework exploring ergonomic, lightweight multi-agent orchestration with integrated support for multiple providers from [litellm](https://github.com/BerriAI/litellm?tab=readme-ov-file#supported-providers-docs) (including **OpenAI**, **Gemini**, **Ollama** and other providers).
 
 
 ## Providers (from `litellm`)
