@@ -2,13 +2,44 @@
 
 # Vswarm (Extended version of Swarm)
 
-An educational framework exploring ergonomic, lightweight multi-agent orchestration with integrated support for multiple providers (including **OpenAI**, **Gemini**, and **Ollama**).
+An educational framework exploring ergonomic, lightweight multi-agent orchestration with integrated support for multiple providers from `litellm` (including **OpenAI**, **Gemini**, **Ollama** and other provider). 
 
 
 ## Providers
-- **OpenAI** – *Default*
-- **Gemini** – *Newly Added*
-- **Ollama** – *Newly Added*
+- **OpenAI**
+- **Azure**
+- **AWS - SageMaker**
+- **AWS - Bedrock**
+- **Google - Vertex AI**
+- **Google - PaLM**
+- **Google AI Studio - Gemini**
+- **Mistral AI API**
+- **Cloudflare AI Workers**
+- **Cohere**
+- **Anthropic**
+- **Empower**
+- **HuggingFace**
+- **Replicate**
+- **Together AI**
+- **OpenRouter**
+- **AI21**
+- **Baseten**
+- **vLLM**
+- **NLP Cloud**
+- **Aleph Alpha**
+- **Petals**
+- **Ollama**
+- **DeepInfra**
+- **Perplexity AI**
+- **Groq AI**
+- **DeepSeek**
+- **Anyscale**
+- **IBM - WatsonX.ai**
+- **Voyage AI**
+- **Xinference [Xorbits Inference]**
+- **FriendliAI**
+- **Galadriel**
+
 
 ## Install
 
@@ -280,7 +311,7 @@ While it's tempting to personify an `Agent` as "someone who does X", it can also
 | Field            | Type                     | Description                                                                   | Default                      |
 | ---------------- | ------------------------ | ----------------------------------------------------------------------------- | ---------------------------- |
 | **name**         | `str`                    | The name of the agent.                                                        | `"Agent"`                    |
-| **model**        | `str`                    | The model to be used by the agent.                                            | `"gpt-4o"`                   |
+| **model**        | `str`                    | The model to be used by the agent (`model=<provider_name>/<model_name>`)      | `""`                         |
 | **instructions** | `str` or `func() -> str` | Instructions for the agent, can be a string or a callable returning a string. | `"You are a helpful agent."` |
 | **functions**    | `List`                   | A list of functions that the agent can call.                                  | `[]`                         |
 | **tool_choice**  | `str`                    | The tool choice for the agent, if any.                                        | `None`                       |
