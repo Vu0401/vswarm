@@ -38,7 +38,7 @@ ollama pull llama3.2:1b
 ```python
 from swarm import Swarm, Agent
 
-client = Swarm(mode="openai")
+client = Swarm(provider="openai")
 
 def transfer_to_agent_b():
     return agent_b
@@ -80,7 +80,7 @@ What can I assist?
 from openai import OpenAI
 from swarm import Swarm, Agent
 
-client = Swarm(mode='gemini', GEMINI_API_KEY="Agza...")
+client = Swarm(provider='gemini', GEMINI_API_KEY="Agza...")
 
 def transfer_to_agent_b():
     return agent_b
@@ -125,7 +125,7 @@ Your needs, we attend.
 from openai import OpenAI
 from swarm import Swarm, Agent
 
-client = Swarm(mode='ollama')
+client = Swarm(provider='ollama')
 
 def transfer_to_agent_b():
     return agent_b
@@ -216,14 +216,14 @@ Start by instantiating a Swarm client (which internally just instantiates an `Op
 #### Arguments
 
 | Argument              | Type    | Description                                                                                                                                      | Default              |
-| --------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------ | --------------       |
-| **mode**             | `str` | The mode for providers including `openai`, `gemini` and `ollama`                                                                                   | (required)            |
-| **gemini_api_key**   | `str` | API key for `gemini` mode, available at [AI Studio](https://aistudio.google.com).                                                                  | (required for gemini) |
+| --------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------| ---------------       |
+| **provider**             | `str` | The provider for providers including `openai`, `gemini` and `ollama`                                                                           | (required)            |
+| **gemini_api_key**   | `str` | API key for `gemini` provider, available at [AI Studio](https://aistudio.google.com).                                                              | (required for gemini) |
 
 ```python
 from swarm import Swarm
 
-client = Swarm(mode="openai")
+client = Swarm(provider="openai")
 ```
 
 ### `client.run()`
