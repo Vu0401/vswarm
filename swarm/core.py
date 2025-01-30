@@ -18,28 +18,28 @@ from .types import (
 __CTX_VARS_NAME__ = "context_variables"
 
 class Swarm():
-    def __init__(self, client=None, mode: str = "",  GEMINI_API_KEY:str = ""):
-        if not mode:
-            raise ValueError("Please set mode (e.g., openai, gemini, ollama).")
+    def __init__(self, client=None, provider: str = "",  gemini_api_key:str = ""):
+        if not provider:
+            raise ValueError("Please set provider (e.g., openai, gemini, ollama).")
         
-        self.mode = mode # set mode
+        self.provider = provider # set provider
         if not client:
-            if self.mode == "ollama":
+            if self.provider == "ollama":
                 client = OpenAI(
                 api_key='ollama', # required, but unused
                 base_url = 'http://localhost:11434/v1', # default ollama api
             )
                 
-            elif self.mode == "gemini":
-                if GEMINI_API_KEY:
+            elif self.provider == "gemini":
+                if gemini_api_key:
                     client = OpenAI(
-                        api_key=GEMINI_API_KEY, # required
+                        api_key=gemini_api_key, # required
                         base_url="https://generativelanguage.googleapis.com/v1beta/openai/" # default gemini api
                     )
                 else:
-                    raise ValueError("Please provide GEMINI_API_KEY !")
+                    raise ValueError("Please provide gemini_api_key !")
                     
-            elif self.mode == "openai":
+            elif self.provider == "openai":
                 client = OpenAI()
             
         self.client = client
@@ -72,7 +72,7 @@ class Swarm():
                 params["required"].remove(__CTX_VARS_NAME__)
         
         if not agent.model and not model_override:
-            raise ValueError("Please provide either the agent model name or model_override that is compatible with the current mode.")
+            raise ValueError("Please provide either the agent model name or model_override that is compatible with the current provider.")
         
         create_params = {
             "model": model_override or agent.model,
@@ -81,9 +81,10 @@ class Swarm():
             "tool_choice": agent.tool_choice,
             "stream": stream,
         }
+
         create_params.update(model_config)
         
-        if self.mode in ("ollama", "openai"):
+        if self.provider in ("ollama", "openai"):
             try:
                 if tools:
                     create_params["parallel_tool_calls"] = agent.parallel_tool_calls                
@@ -98,13 +99,13 @@ class Swarm():
                 return self.client.chat.completions.create(**create_params)
 
             except ValueError:
-                raise ValueError("Please provide either the agent model name or model_override that is compatible with the current mode.")
+                raise ValueError("Please provide either the agent model name or model_override that is compatible with the current provider.")
 
-        elif self.mode == "gemini":
+        elif self.provider == "gemini":
             try:
                 return self.client.chat.completions.create(**create_params)
             except Exception:
-                raise ValueError("Please provide either the agent model name or model_override that is compatible with the current mode.")
+                raise ValueError("Please provide either the agent model name or model_override that is compatible with the current provider.")
         
     def handle_function_result(self, result, debug) -> Result: 
         match result:
@@ -141,7 +142,7 @@ class Swarm():
             # handle missing tool case, skip to next tool
             if name not in function_map:
                 debug_print(debug, f"Tool {name} not found in function map.")
-                if self.mode in ("ollama", "openai"):
+                if self.provider in ("ollama", "openai"):
                     partial_response.messages.append(
                         {
                             "role": "tool",
@@ -152,7 +153,7 @@ class Swarm():
                     )
                     continue
                 
-                elif self.mode in ("gemini"):
+                elif self.provider in ("gemini"):
                     partial_response.messages.append(
                         {
                             "role": "assistant",
@@ -173,7 +174,7 @@ class Swarm():
 
             result: Result = self.handle_function_result(raw_result, debug)
             
-            if self.mode in ("ollama", "openai"):
+            if self.provider in ("ollama", "openai"):
                 partial_response.messages.append(
                     {
                         "role": "tool", 
@@ -183,7 +184,7 @@ class Swarm():
                     }
                 )
                 
-            elif self.mode in ("gemini"):
+            elif self.provider in ("gemini"):
                 partial_response.messages.append(
                     {
                         "role": "assistant", 
@@ -336,12 +337,12 @@ class Swarm():
             message.sender = active_agent.name
             
             # update history
-            if self.mode in ("openai", "ollama"): 
+            if self.provider in ("openai", "ollama"): 
                 history.append(
                     json.loads(message.model_dump_json())
                 )  
                 
-            elif self.mode in ("gemini"):
+            elif self.provider in ("gemini"):
                 history.append(
                     {
                         "role": message.role,
@@ -363,7 +364,7 @@ class Swarm():
                 active_agent = partial_response.agent
 
         # post-process last output for Gemini
-        if self.mode in ("gemini"):
+        if self.provider in ("gemini"):
             messages = history[init_len:][-1]["content"]
             last_content = json.loads(messages)["content"]
             history[init_len:][-1]["content"] = last_content.strip()
