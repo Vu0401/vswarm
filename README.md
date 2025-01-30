@@ -5,7 +5,7 @@
 An educational framework exploring ergonomic, lightweight multi-agent orchestration with integrated support for multiple providers from `litellm` (including **OpenAI**, **Gemini**, **Ollama** and other provider). 
 
 
-## Providers
+## Providers (from `litellm`)
 - **OpenAI**
 - **Azure**
 - **AWS - SageMaker**
