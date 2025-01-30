@@ -2,8 +2,8 @@ import copy
 import json
 from collections import defaultdict
 from typing import List
-
-from openai import OpenAI
+from litellm import completion
+import litellm
 from .util import function_to_json, debug_print, merge_chunk
 from .types import (
     Agent,
@@ -16,34 +16,12 @@ from .types import (
 )
 
 __CTX_VARS_NAME__ = "context_variables"
+litellm.drop_params = True
 
 class Swarm():
-    def __init__(self, client=None, provider: str = "",  gemini_api_key:str = ""):
-        if not provider:
-            raise ValueError("Please set provider (e.g., openai, gemini, ollama).")
-        
-        self.provider = provider # set provider
-        if not client:
-            if self.provider == "ollama":
-                client = OpenAI(
-                api_key='ollama', # required, but unused
-                base_url = 'http://localhost:11434/v1', # default ollama api
-            )
-                
-            elif self.provider == "gemini":
-                if gemini_api_key:
-                    client = OpenAI(
-                        api_key=gemini_api_key, # required
-                        base_url="https://generativelanguage.googleapis.com/v1beta/openai/" # default gemini api
-                    )
-                else:
-                    raise ValueError("Please provide gemini_api_key !")
-                    
-            elif self.provider == "openai":
-                client = OpenAI()
-            
-        self.client = client
-
+    def __init__(self):
+        pass
+    
     def get_chat_completion( 
         self,
         agent: Agent,
@@ -52,7 +30,6 @@ class Swarm():
         model_override: str,
         stream: bool,
         debug: bool,
-        model_config: dict,
     ) -> ChatCompletionMessage:
         context_variables = defaultdict(str, context_variables)
         instructions = (
@@ -72,7 +49,7 @@ class Swarm():
                 params["required"].remove(__CTX_VARS_NAME__)
         
         if not agent.model and not model_override:
-            raise ValueError("Please provide either the agent model name or model_override that is compatible with the current provider.")
+            raise ValueError("Please provide either the agent model name or model_override.")
         
         create_params = {
             "model": model_override or agent.model,
@@ -81,31 +58,14 @@ class Swarm():
             "tool_choice": agent.tool_choice,
             "stream": stream,
         }
-
+        model_config = agent.model_config
         create_params.update(model_config)
-        
-        if self.provider in ("ollama", "openai"):
-            try:
-                if tools:
-                    create_params["parallel_tool_calls"] = agent.parallel_tool_calls                
-                return self.client.chat.completions.create(**create_params)
-            
-            except Exception as e:
-                # Warn if the model does not support tools and switch to disabling tools
-                print("Warning: This model does not support tools. Switching to tool-disabled mode.")
-                # Remove tool-related parameters from create_params
-                create_params["tools"] = None
-                create_params["tool_choice"] = None
-                return self.client.chat.completions.create(**create_params)
 
-            except ValueError:
-                raise ValueError("Please provide either the agent model name or model_override that is compatible with the current provider.")
-
-        elif self.provider == "gemini":
-            try:
-                return self.client.chat.completions.create(**create_params)
-            except Exception:
-                raise ValueError("Please provide either the agent model name or model_override that is compatible with the current provider.")
+        try:
+            response = completion(**create_params)
+            return response
+        except Exception:
+            raise RuntimeError("This model either does not provide tools or may occasionally fail to call tools due to its limitations.")
         
     def handle_function_result(self, result, debug) -> Result: 
         match result:
@@ -142,25 +102,15 @@ class Swarm():
             # handle missing tool case, skip to next tool
             if name not in function_map:
                 debug_print(debug, f"Tool {name} not found in function map.")
-                if self.provider in ("ollama", "openai"):
-                    partial_response.messages.append(
-                        {
-                            "role": "tool",
-                            "tool_call_id": tool_call.id,
-                            "tool_name": name,
-                            "content": f"Error: Tool {name} not found.",
-                        }
-                    )
-                    continue
-                
-                elif self.provider in ("gemini"):
-                    partial_response.messages.append(
-                        {
-                            "role": "assistant",
-                            "content": f"Error: Tool {name} not found.",
-                        }
-                    )
-                    continue
+                partial_response.messages.append(
+                    {
+                        "role": "tool",
+                        "tool_call_id": tool_call.id,
+                        "tool_name": name,
+                        "content": f"Error: Tool {name} not found.",
+                    }
+                )
+                continue
                 
             args = json.loads(tool_call.function.arguments)
             debug_print(
@@ -170,28 +120,23 @@ class Swarm():
             # pass context_variables to agent functions
             if __CTX_VARS_NAME__ in func.__code__.co_varnames:
                 args[__CTX_VARS_NAME__] = context_variables
-            raw_result = function_map[name](**args)
+
+            valid_params = function_map[name].__code__.co_varnames[:function_map[name].__code__.co_argcount]
+            filtered_args = {k: v for k, v in args.items() if k in valid_params}
+
+            raw_result = function_map[name](**filtered_args)
 
             result: Result = self.handle_function_result(raw_result, debug)
             
-            if self.provider in ("ollama", "openai"):
-                partial_response.messages.append(
-                    {
-                        "role": "tool", 
-                        "tool_call_id": tool_call.id,
-                        "tool_name": name,
-                        "content": result.value, 
-                    }
-                )
-                
-            elif self.provider in ("gemini"):
-                partial_response.messages.append(
-                    {
-                        "role": "assistant", 
-                        "content": f"Tool {name} returned: {result.value}. \nTool_call args: {args}", 
-                    }
-                )
-                
+            partial_response.messages.append(
+                {
+                    "role": "tool", 
+                    "tool_call_id": tool_call.id,
+                    "tool_name": name,
+                    "content": result.value, 
+                }
+            )
+
             partial_response.context_variables.update(result.context_variables)
             if result.agent:
                 partial_response.agent = result.agent
@@ -204,7 +149,6 @@ class Swarm():
         messages: List,
         context_variables: dict = {},
         model_override: str = None,
-        model_config: dict = {},
         debug: bool = False,
         max_turns: int = float("inf"),
         execute_tools: bool = True,
@@ -238,7 +182,6 @@ class Swarm():
                 model_override=model_override,
                 stream=True,
                 debug=debug,
-                model_config=model_config,
             )
 
             yield {"delim": "start"}
@@ -298,7 +241,6 @@ class Swarm():
         messages: List,
         context_variables: dict = {},
         model_override: str = None,
-        model_config:dict = {},
         stream: bool = False,
         debug: bool = False,
         max_turns: int = float("inf"),
@@ -310,7 +252,6 @@ class Swarm():
                 messages=messages,
                 context_variables=context_variables,
                 model_override=model_override,
-                model_config=model_config,
                 debug=debug,
                 max_turns=max_turns,
                 execute_tools=execute_tools,
@@ -330,25 +271,15 @@ class Swarm():
                 model_override=model_override,
                 stream=stream,
                 debug=debug,
-                model_config=model_config,
             )
+            
             message = completion.choices[0].message
             debug_print(debug, "Received completion:", message)
             message.sender = active_agent.name
-            
-            # update history
-            if self.provider in ("openai", "ollama"): 
-                history.append(
-                    json.loads(message.model_dump_json())
-                )  
-                
-            elif self.provider in ("gemini"):
-                history.append(
-                    {
-                        "role": message.role,
-                        "content": str(json.loads(message.model_dump_json())).replace("'", '"').replace("None", "null")
-                    }
-                ) 
+
+            history.append(
+                json.loads(message.model_dump_json())
+            )  
 
             if not message.tool_calls or not execute_tools:
                 debug_print(debug, "Ending turn.")
@@ -362,12 +293,6 @@ class Swarm():
             context_variables.update(partial_response.context_variables)
             if partial_response.agent:
                 active_agent = partial_response.agent
-
-        # post-process last output for Gemini
-        if self.provider in ("gemini"):
-            messages = history[init_len:][-1]["content"]
-            last_content = json.loads(messages)["content"]
-            history[init_len:][-1]["content"] = last_content.strip()
         
         return Response(
             messages=history[init_len:],

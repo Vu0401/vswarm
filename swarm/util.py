@@ -80,8 +80,8 @@ def function_to_json(func) -> dict:
             "description": func.__doc__ or "",
             "parameters": {
                 "type": "object",
-                "properties": parameters,
-                "required": required,
+                "properties": parameters if parameters else {'fallback_': {'type': 'string'}},  # Fallback for functions with no parameters
+                "required": required if required else [],
             },
         },
     }
