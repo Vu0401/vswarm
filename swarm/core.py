@@ -65,7 +65,7 @@ class Swarm():
             response = completion(**create_params)
             return response
         except:
-            error_message = "Please verify that an API key is provided. Alternatively, there may have been an error during the tool call process due to model limitations."
+            error_message = "Please verify that an API key is provided, or errors may occur due to model limitations."
             raise ValueError(error_message)
         
     def handle_function_result(self, result, debug) -> Result: 
