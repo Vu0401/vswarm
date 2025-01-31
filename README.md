@@ -163,7 +163,10 @@ Your needs, we attend.
 ```
 
 #### Custom
-Important: There may occasionally be errors due to model limitations; therefore, consider using a larger model.
+
+**Important:** There may occasionally be errors due to model limitations.  
+👉 To improve performance and reduce errors, consider using a **larger model**.
+
 ```python
 from openai import OpenAI
 from swarm import Swarm, Agent
