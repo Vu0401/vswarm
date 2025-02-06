@@ -4,11 +4,12 @@ import sqlite3
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 import sys
+from .base_storage import BaseStorage
 from swarm.utilities import Printer
 from swarm.util import PATHS
 
 
-class SQLiteStorage:
+class SQLiteStorage(BaseStorage):
     """
     An updated SQLite storage class for LTM data storage.
     """
@@ -23,9 +24,9 @@ class SQLiteStorage:
         self._printer: Printer = Printer()
         # Ensure parent directory exists
         Path(self.db_path).parent.mkdir(parents=True, exist_ok=True)
-        self._initialize_db()
+        self._initialize_app()
 
-    def _initialize_db(self):
+    def _initialize_app(self):
         """
         Initializes the SQLite database and creates LTM table
         """
@@ -78,7 +79,7 @@ class SQLiteStorage:
                 color="red",
             )
 
-    def load(
+    def search(
         self, task_description: str, latest_n: int
     ) -> Optional[List[Dict[str, Any]]]:
         """Queries the LTM table by task description with error handling."""

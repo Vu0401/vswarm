@@ -6,12 +6,11 @@ import shutil
 import uuid
 from typing import Any, Dict, List, Optional
 
-from pydatic import BaseModel
+from .base_storage import BaseStorage
 
 from chromadb.api import ClientAPI
 
 from swarm.utilities import EmbeddingConfigurator
-# from crewai.utilities.constants import MAX_FILE_NAME_LENGTH
 from swarm.util import PATHS
 
 
@@ -32,7 +31,7 @@ def suppress_logging(
     logger.setLevel(original_level)
 
 
-class RAGStorage():
+class RAGStorage(BaseStorage):
     """
     Extends Storage to handle embeddings for memory entries, improving
     search efficiency.
@@ -41,19 +40,28 @@ class RAGStorage():
     app: ClientAPI | None = None
 
     def __init__(
-        self, type, allow_reset=True, embedder_config=None, crew=None, path=None
+        self, type, allow_reset=True, embedder_config=None
     ):
-        super().__init__(type, allow_reset, embedder_config, crew)
-        agents = crew.agents if crew else []
-        agents = [self._sanitize_role(agent.role) for agent in agents]
-        agents = "_".join(agents)
-        self.agents = agents
+        '''
+        Args:
+            type: str - the type of storage to use
+            allow_reset: bool - whether to allow resetting the storage
+            embedder_config: dict - configuration for the embedder
+            e.g.
+                {
+                    "provider": "openai",
+                    "config": {
+                        "model": "text-embedding-3-small",
+                        "api_key": "your_openai_api_key"
+                    }
+                }
+
+        '''
         self.storage_file_name = PATHS.SHORT_TERM_STORAGE
 
         self.type = type
-
+        self.embedder_config = embedder_config
         self.allow_reset = allow_reset
-        self.path = path
         self._initialize_app()
 
     def _set_embedder_config(self):
@@ -64,7 +72,6 @@ class RAGStorage():
     def _initialize_app(self):
         import chromadb
         from chromadb.config import Settings
-
         self._set_embedder_config()
         chroma_client = chromadb.PersistentClient(
             path=self.storage_file_name,
@@ -82,29 +89,15 @@ class RAGStorage():
                 name=self.type, embedding_function=self.embedder_config
             )
 
-    def _sanitize_role(self, role: str) -> str:
-        """
-        Sanitizes agent roles to ensure valid directory names.
-        """
-        return role.replace("\n", "").replace(" ", "_").replace("/", "_")
-
-    def _build_storage_file_name(self, type: str, file_name: str) -> str:
-        """
-        Ensures file name does not exceed max allowed by OS
-        """
-        base_path = f"{db_storage_path()}/{type}"
-
-        return f"{base_path}/{file_name}"
-
     def save(self, value: Any, metadata: Dict[str, Any]) -> None:
         if not hasattr(self, "app") or not hasattr(self, "collection"):
             self._initialize_app()
         try:
-            self._generate_embedding(value, metadata)
+            self._add_embedding_to_collection(value, metadata)
         except Exception as e:
             logging.error(f"Error during {self.type} save: {str(e)}")
 
-    def _generate_embedding(self, text: str, metadata: Dict[str, Any]) -> None:
+    def _add_embedding_to_collection(self, text: str, metadata: Dict[str, Any]) -> None:
         if not hasattr(self, "app") or not hasattr(self, "collection"):
             self._initialize_app()
 
@@ -118,7 +111,6 @@ class RAGStorage():
         self,
         query: str,
         limit: int = 3,
-        filter: Optional[dict] = None,
         score_threshold: float = 0.35,
     ) -> List[Any]:
         if not hasattr(self, "app"):
@@ -139,7 +131,6 @@ class RAGStorage():
                 }
                 if result["score"] >= score_threshold:
                     results.append(result)
-
             return results
         except Exception as e:
             logging.error(f"Error during {self.type} search: {str(e)}")
@@ -149,7 +140,7 @@ class RAGStorage():
         try:
             if self.app:
                 self.app.reset()
-                shutil.rmtree(f"{db_storage_path()}/{self.type}")
+                shutil.rmtree(self.storage_file_name)
                 self.app = None
                 self.collection = None
         except Exception as e:
