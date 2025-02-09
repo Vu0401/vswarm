@@ -30,7 +30,7 @@ class LongTermMemory(Memory):
         )
 
     def search(self, task: str, latest_n: int = 3) -> List[Dict[str, Any]]:
-        return self.storage.load(task, latest_n)  
+        return self.storage.search(task, latest_n)  
 
     def reset(self) -> None:
         self.storage.reset()
