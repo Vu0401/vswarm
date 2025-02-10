@@ -1,6 +1,9 @@
 import inspect
+from dataclasses import dataclass
 from datetime import datetime
+import os
 import yaml
+
 
 def debug_print(debug: bool, *args: str) -> None:
     if not debug:
@@ -63,7 +66,8 @@ def function_to_json(func) -> dict:
             param_type = type_map.get(param.annotation, "string")
         except KeyError as e:
             raise KeyError(
-                f"Unknown type annotation {param.annotation} for parameter {param.name}: {str(e)}"
+                f"Unknown type annotation {
+                    param.annotation} for parameter {param.name}: {str(e)}"
             )
         parameters[param.name] = {"type": param_type}
 
@@ -80,8 +84,16 @@ def function_to_json(func) -> dict:
             "description": func.__doc__ or "",
             "parameters": {
                 "type": "object",
-                "properties": parameters if parameters else {'fallback_': {'type': 'string'}},  # Fallback for functions with no parameters
+                # Fallback for functions with no parameters
+                "properties": parameters if parameters else {'fallback_': {'type': 'string'}},
                 "required": required if required else [],
             },
         },
     }
+
+
+@dataclass
+class PATHS:
+    storage: str = "storages/"
+    LONG_TERM_STORAGE: str = os.path.join(storage, "long_term_memory.db")
+    SHORT_TERM_STORAGE: str = os.path.join(storage, "short_term_memory.db")
