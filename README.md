@@ -4,7 +4,7 @@ An educational framework [Swarm](https://github.com/openai/swarm) exploring ergo
 
 
 ## Providers (from `litellm`)
-Search by model name: [litellm model](https://models.litellm.ai)
+Search by model name: [litellm models](https://models.litellm.ai)
 - **OpenAI**
 - **Azure**
 - **AWS - SageMaker**
