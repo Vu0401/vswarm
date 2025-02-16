@@ -2,7 +2,6 @@ import inspect
 from dataclasses import dataclass
 from datetime import datetime
 import os
-import yaml
 
 
 def debug_print(debug: bool, *args: str) -> None:
@@ -85,7 +84,9 @@ def function_to_json(func) -> dict:
             "parameters": {
                 "type": "object",
                 # Fallback for functions with no parameters
-                "properties": parameters if parameters else {'fallback_': {'type': 'string'}},
+                "properties": (
+                    parameters if parameters else {"fallback_": {"type": "string"}}
+                ),
                 "required": required if required else [],
             },
         },

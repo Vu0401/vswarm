@@ -1,9 +1,7 @@
 import json
-import os
 import sqlite3
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
-import sys
 from .base_storage import BaseStorage
 from swarm.utilities import Printer
 from swarm.util import PATHS
@@ -14,9 +12,7 @@ class SQLiteStorage(BaseStorage):
     An updated SQLite storage class for LTM data storage.
     """
 
-    def __init__(
-        self, db_path: Optional[str] = None
-    ) -> None:
+    def __init__(self, db_path: Optional[str] = None) -> None:
         if db_path is None:
             # Get the parent directory of the default db path and create our db file there
             db_path = PATHS.LONG_TERM_STORAGE

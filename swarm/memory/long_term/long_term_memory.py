@@ -16,13 +16,17 @@ class LongTermMemory(Memory):
 
     def __init__(self, agent_name: str, storage=None, sql_connection_string=None):
         if not storage:
-            storage = SQLiteStorage(db_path=sql_connection_string) if sql_connection_string else SQLiteStorage()
+            storage = (
+                SQLiteStorage(db_path=sql_connection_string)
+                if sql_connection_string
+                else SQLiteStorage()
+            )
         super().__init__(agent_name=agent_name, storage=storage)
 
-    def save(self, item: LongTermMemoryItem) -> None:  
+    def save(self, item: LongTermMemoryItem) -> None:
         metadata = item.metadata
         metadata.update({"agent": item.agent, "expected_output": item.expected_output})
-        self.storage.save(  
+        self.storage.save(
             task_description=item.task,
             score=metadata["quality"],
             metadata=metadata,
@@ -30,7 +34,7 @@ class LongTermMemory(Memory):
         )
 
     def search(self, task: str, latest_n: int = 3) -> List[Dict[str, Any]]:
-        return self.storage.search(task, latest_n)  
+        return self.storage.search(task, latest_n)
 
     def reset(self) -> None:
         self.storage.reset()

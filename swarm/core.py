@@ -1,13 +1,11 @@
 from swarm.utilities.printer import Printer
 import copy
-import os
 import json
 from datetime import datetime
 from collections import defaultdict
 from typing import List
 from litellm import completion
 import litellm
-from .tasks import Task
 from .util import function_to_json, debug_print, merge_chunk
 from .types import (
     Agent,
@@ -19,13 +17,9 @@ from .types import (
     Result,
 )
 from .memory import (
-    LongTermMemory,
     LongTermMemoryItem,
-    ShortTermMemory,
     ShortTermMemoryItem,
-    EntityMemory,
     EntityMemoryItem,
-    ContextualMemory
 )
 from swarm.utilities import TaskEvaluation
 
@@ -34,7 +28,9 @@ litellm.drop_params = True
 
 printer = Printer()
 
-class Swarm():
+
+class Swarm:
+
     def _build_agent_context(self, agent: Agent, query: str) -> str:
         """Build context from agent's active memories"""
         if not agent.memory:
@@ -78,7 +74,8 @@ class Swarm():
 
         if not agent.model and not model_override:
             raise ValueError(
-                "Please provide either the agent model name or model_override.")
+                "Please provide either the agent model name or model_override."
+            )
 
         create_params = {
             "model": model_override or agent.model,
@@ -123,8 +120,7 @@ class Swarm():
         debug: bool,
     ) -> Response:
         function_map = {f.__name__: f for f in functions}
-        partial_response = Response(
-            messages=[], agent=None, context_variables={})
+        partial_response = Response(messages=[], agent=None, context_variables={})
 
         for tool_call in tool_calls:
             name = tool_call.function.name
@@ -143,18 +139,17 @@ class Swarm():
                 continue
 
             args = json.loads(tool_call.function.arguments)
-            debug_print(
-                debug, f"Processing tool call: {name} with arguments {args}")
+            debug_print(debug, f"Processing tool call: {name} with arguments {args}")
 
             func = function_map[name]
             # pass context_variables to agent functions
             if __CTX_VARS_NAME__ in func.__code__.co_varnames:
                 args[__CTX_VARS_NAME__] = context_variables
 
-            valid_params = function_map[name].__code__.co_varnames[:
-                                                                   function_map[name].__code__.co_argcount]
-            filtered_args = {k: v for k,
-                             v in args.items() if k in valid_params}
+            valid_params = function_map[name].__code__.co_varnames[
+                : function_map[name].__code__.co_argcount
+            ]
+            filtered_args = {k: v for k, v in args.items() if k in valid_params}
 
             raw_result = function_map[name](**filtered_args)
 
@@ -227,8 +222,7 @@ class Swarm():
                 merge_chunk(message, delta)
             yield {"delim": "end"}
 
-            message["tool_calls"] = list(
-                message.get("tool_calls", {}).values())
+            message["tool_calls"] = list(message.get("tool_calls", {}).values())
             if not message["tool_calls"]:
                 message["tool_calls"] = None
             debug_print(debug, "Received completion:", message)
@@ -293,7 +287,13 @@ class Swarm():
             )
 
         # Initialize agent memories if needed
-        if agent.memory and any([agent.use_entity_memory, agent.use_long_term_memory, agent.use_short_term_memory]):
+        if agent.memory and any(
+            [
+                agent.use_entity_memory,
+                agent.use_long_term_memory,
+                agent.use_short_term_memory,
+            ]
+        ):
             agent.initialize_memories()
 
         active_agent = agent
@@ -315,29 +315,31 @@ class Swarm():
                     context_variables=context_variables,
                 )
                 self._update_memories(
-                    previous_agent, task_description, partial_response)
+                    previous_agent, task_description, partial_response
+                )
 
                 # Initialize memories for new agent if needed
-                if active_agent.memory and any([
-                    active_agent.use_entity_memory,
-                    active_agent.use_long_term_memory,
-                    active_agent.use_short_term_memory
-                ]):
+                if active_agent.memory and any(
+                    [
+                        active_agent.use_entity_memory,
+                        active_agent.use_long_term_memory,
+                        active_agent.use_short_term_memory,
+                    ]
+                ):
                     active_agent.initialize_memories()
 
             # Build context from active agent's memories
-            memory_context = self._build_agent_context(
-                active_agent, task_description)
+            memory_context = self._build_agent_context(active_agent, task_description)
             if memory_context:
                 last_msg = history[-1].copy()
                 last_msg["content"] = f"{last_msg.get('content', '')}\n{memory_context}"
                 history[-1] = last_msg
 
             if memory_context:
-                printer.print(memory_context, 'green') 
+                printer.print(memory_context, "green")
             else:
-                printer.print("No relevant context found in memory.", 'red')    
-                
+                printer.print("No relevant context found in memory.", "red")
+
             # Get completion with current history, agent
             completion = self.get_chat_completion(
                 agent=active_agent,
@@ -381,7 +383,9 @@ class Swarm():
 
         return response
 
-    def _update_memories(self, agent: Agent, task_description: str, response: Response) -> None:
+    def _update_memories(
+        self, agent: Agent, task_description: str, response: Response
+    ) -> None:
         """Update agent's memories based on the interaction"""
         if not agent.memory:
             return
@@ -389,13 +393,11 @@ class Swarm():
         try:
             # Evaluate task if long-term or entity memory is used
             if agent.use_long_term_memory or agent.use_entity_memory:
-                evaluation = self._evaluate_response(
-                    task_description, response)
+                evaluation = self._evaluate_response(task_description, response)
 
                 # Update long-term memory
                 if agent.use_long_term_memory:
-                    self._update_long_term_memory(
-                        agent, task_description, evaluation)
+                    self._update_long_term_memory(agent, task_description, evaluation)
 
                 # Update entity memory
                 if agent.use_entity_memory:
@@ -403,13 +405,14 @@ class Swarm():
 
             # Update short-term memory
             if agent.use_short_term_memory:
-                self._update_short_term_memory(
-                    agent, task_description, response)
+                self._update_short_term_memory(agent, task_description, response)
 
         except Exception as e:
             print(f"Error updating memories: {str(e)}")
 
-    def _evaluate_response(self, task_description: str, response: Response) -> TaskEvaluation:
+    def _evaluate_response(
+        self, task_description: str, response: Response
+    ) -> TaskEvaluation:
         """Evaluate the task completion and return structured feedback"""
         evaluation_query = (
             f"Assess the quality of the task completed based on the description and actual messages.\n\n"
@@ -431,12 +434,14 @@ class Swarm():
         result = completion(
             model=response.agent.model,
             messages=[{"content": content, "role": "user"}],
-            response_format={"type": "json_object"}
+            response_format={"type": "json_object"},
         )
-        
+
         return TaskEvaluation.parse_raw(result.choices[0].message.content)
 
-    def _update_long_term_memory(self, agent: Agent, task: str, evaluation: TaskEvaluation) -> None:
+    def _update_long_term_memory(
+        self, agent: Agent, task: str, evaluation: TaskEvaluation
+    ) -> None:
         """Update long-term memory with task results"""
         memory_item = LongTermMemoryItem(
             task=task,
@@ -445,35 +450,40 @@ class Swarm():
             datetime=str(datetime.now()),
             metadata={
                 "suggestions": evaluation.suggestions,
-                "quality": evaluation.quality
-            }
+                "quality": evaluation.quality,
+            },
         )
-        printer.print(f"Updating long-term memory\n\n{json.dumps(vars(memory_item), indent=4)}", 'cyan')
+        printer.print(
+            f"Updating long-term memory\n\n{json.dumps(vars(memory_item), indent=4)}",
+            "cyan",
+        )
         agent.long_term_memory.save(memory_item)
 
     def _update_entity_memory(self, agent: Agent, evaluation: TaskEvaluation) -> None:
         """Update entity memory with extracted entities"""
-        printer.print("Updating entity memory...\n\n", 'cyan')
+        printer.print("Updating entity memory...\n\n", "cyan")
         for entity in evaluation.entities:
             memory_item = EntityMemoryItem(
                 name=entity.name,
                 type=entity.type,
                 description=entity.description,
-                relationships=entity.relationships
+                relationships=entity.relationships,
             )
-            printer.print(f"{json.dumps(vars(memory_item), indent=4)}\n\n", 'cyan')
+            printer.print(f"{json.dumps(vars(memory_item), indent=4)}\n\n", "cyan")
             agent.entity_memory.save(memory_item)
 
-    def _update_short_term_memory(self, agent: Agent, task: str, response: Response) -> None:
+    def _update_short_term_memory(
+        self, agent: Agent, task: str, response: Response
+    ) -> None:
         """Update short-term memory with recent interaction"""
-        last_message = response.messages[-1].get(
-            "content", "") if response.messages else ""
-        memory_item = ShortTermMemoryItem(
-            data=last_message,
-            metadata={
-                "task": task,
-                "timestamp": str(datetime.now())
-            }
+        last_message = (
+            response.messages[-1].get("content", "") if response.messages else ""
         )
-        printer.print(f"Updating short-term memory\n\n{json.dumps(vars(memory_item), indent=4)}", 'cyan')
+        memory_item = ShortTermMemoryItem(
+            data=last_message, metadata={"task": task, "timestamp": str(datetime.now())}
+        )
+        printer.print(
+            f"Updating short-term memory\n\n{json.dumps(vars(memory_item), indent=4)}",
+            "cyan",
+        )
         agent.short_term_memory.save(memory_item)

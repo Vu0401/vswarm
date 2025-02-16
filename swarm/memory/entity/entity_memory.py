@@ -1,14 +1,16 @@
+import datetime
+
 from .entity_memory_item import EntityMemoryItem
 from ..memory import Memory
-import datetime
-from swarm.memory.storage import RAGStorage
+from ..storage import RAGStorage
 
 
 class EntityMemory(Memory):
     def __init__(self, agent_name: str, chroma_client=None):
         collection_name = f"{agent_name}_entity_memory"
-        storage = RAGStorage(collection_name=collection_name,
-                             chroma_client=chroma_client)
+        storage = RAGStorage(
+            collection_name=collection_name, chroma_client=chroma_client
+        )
         super().__init__(agent_name=agent_name, storage=storage)
 
     def save(self, entity: EntityMemoryItem) -> None:
@@ -39,13 +41,12 @@ class EntityMemory(Memory):
         limit: int = 3,
     ):
         return self.storage.search(
-            text=query, 
-            limit=limit,
-            metadata={"agent": self.agent_name}
+            text=query, limit=limit, metadata={"agent": self.agent_name}
         )
 
     def reset(self) -> None:
         try:
             self.storage.reset()
         except Exception as e:
-            raise Exception(f"An error occurred while resetting the entity memory: {e}")
+            raise Exception(
+                f"An error occurred while resetting the entity memory: {e}")
