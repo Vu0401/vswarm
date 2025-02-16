@@ -490,6 +490,78 @@ Two new event types have been added:
 - `{"delim":"start"}` and `{"delim":"end"}`, to signal each time an `Agent` handles a single message (response or function call). This helps identify switches between `Agent`s.
 - `{"response": Response}` will return a `Response` object at the end of a stream with the aggregated (complete) response, for convenience.
 
+## Memory
+
+### Memory Types
+
+1. **Short-term Memory (STM)**
+   - Stores recent interactions and conversation context
+   - Uses vector storage (ChromaDB) for similarity search
+
+2. **Long-term Memory (LTM)**
+   - Stores historical task performance and learnings
+   - Uses SQLite for persistent storage
+   - Includes quality scores and improvement suggestions
+
+3. **Entity Memory**
+   - Stores named entities and their relationships
+   - Uses vector storage for knowledge graph-like structure
+   - Maintains domain knowledge across conversations
+
+### Usage
+
+Enable memory features in your agent:
+
+```python
+agent = Agent(
+    name="memory_agent",
+    model="openai/gpt-4",
+    memory=True,
+    use_short_term_memory=True,
+    use_long_term_memory=True,
+    use_entity_memory=True
+)
+```
+
+Memory is automatically managed during conversations:
+- Context is retrieved and injected into prompts
+- Interactions are evaluated and stored
+- Entities are extracted and relationships maintained
+
+### Example
+
+```python
+from swarm import Agent
+from swarm.repl import run_demo_loop
+import os
+from dotenv import load_dotenv
+load_dotenv()
+
+
+agent_a = Agent(
+    name="Agent A",
+    model="gemini/gemini-1.5-flash",
+    instructions="Transfer to Agent B",
+    memory=True,
+    use_long_term_memory=True,
+    use_short_term_memory=True,
+    use_entity_memory=True,
+    model_config={
+            "api_config": os.environ["GEMINI_API_KEY"],
+            "max_tokens": 30,
+            "temperature": 0,
+            }
+)
+
+run_demo_loop(agent_a)
+```
+
+The agent will automatically:
+- Retrieve relevant past conversations
+- Build context from stored memories
+- Update memories with new information
+
+
 # Evaluations
 
 Evaluations are crucial to any project, and we encourage developers to bring their own eval suites to test the performance of their swarms. For reference, we have some examples for how to eval swarm in the `airline`, `weather_agent` and `triage_agent` quickstart examples. See the READMEs for more details.

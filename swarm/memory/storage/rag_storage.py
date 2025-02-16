@@ -21,8 +21,6 @@ class RAGStorage(BaseStorage):
 
         # Get or create collection
         collection_name = self._validate_collection_name(collection_name)
-        print(f"Len of collection name: {len(collection_name)}")
-        print(f"Collection name: {collection_name}")
         self.collection = self.client.get_or_create_collection(
             name=collection_name,
             metadata={"hnsw:space": "cosine"}
