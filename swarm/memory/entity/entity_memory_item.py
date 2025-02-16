@@ -9,4 +9,4 @@ class EntityMemoryItem:
         self.name = name
         self.type = type
         self.description = description
-        self.metadata = {"relationships": relationships}
+        self.metadata = {"relationships": ', '.join(relationships)}

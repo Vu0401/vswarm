@@ -1,21 +1,20 @@
-from abc import ABC, abstractmethod
 from .storage.base_storage import BaseStorage
-from typing import Any, Dict, List, Optional
+from typing import Any
+from pydantic import BaseModel, InstanceOf
 
-class Memory(ABC):
-    """
-    Base class for memory, now supporting agent tags and generic metadata.
-    """
 
-    def __init__(self, storage):
-        if not isinstance(storage, BaseStorage):
-            raise ValueError("storage must be an instance of BaseStorage")
-        self.storage = storage
+class Memory(BaseModel):
+    agent_name: str
+    storage: InstanceOf[BaseStorage]
 
-    @abstractmethod
-    def save(self):
+    def save(self, item: Any) -> None:
         raise NotImplementedError
-    
-    @abstractmethod
-    def search(self):
+
+    def retrieve(self, query: str) -> Any:
+        raise NotImplementedError
+
+    def update(self, key: str, value: Any) -> None:
+        raise NotImplementedError
+
+    def delete(self, key: str) -> None:
         raise NotImplementedError

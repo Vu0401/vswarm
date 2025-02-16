@@ -1,3 +1,4 @@
+from swarm.utilities.printer import Printer
 import copy
 import os
 import json
@@ -31,40 +32,23 @@ from swarm.utilities import TaskEvaluation
 __CTX_VARS_NAME__ = "context_variables"
 litellm.drop_params = True
 
+printer = Printer()
 
 class Swarm():
-    def __init__(self, memory: bool = False):
-        self.memory = memory
-        self.create_memory()
+    def _build_agent_context(self, agent: Agent, query: str) -> str:
+        """Build context from agent's active memories"""
+        if not agent.memory:
+            return ""
 
-    def create_memory(self):
-        if self.memory:
-            # NEED TO UPDATE
-            embedder_config = {
-                "provider": "google",
-                "config": {
-                    "model": "models/text-embedding-004",
-                    "api_key": os.getenv("GEMINI_API_KEY")
-                }
-            }
-            self._long_term_memory = LongTermMemory()
-            self._short_term_memory = ShortTermMemory(
-                embedder_config=embedder_config)
-            self._entity_memory = EntityMemory(embedder_config=embedder_config)
+        context = agent.build_context_from_query(query)
+        if not context or not context.get("context"):
+            return ""
 
-    def _build_context_from_message(self, message):
-        if not self.memory:
-            return message
+        context_text = "\nRelevant context from memory:\n"
+        for item in context.get("context", []):
+            context_text += f"- {item}\n"
 
-        contextual_memory = ContextualMemory(
-            ltm=self._long_term_memory,
-            stm=self._short_term_memory,
-            em=self._entity_memory
-        )
-        # TODO: update context here?
-        context = ""
-
-        return contextual_memory.build_context_for_task(self.task, context)
+        return context_text
 
     def get_chat_completion(
         self,
@@ -294,14 +278,9 @@ class Swarm():
         max_turns: int = float("inf"),
         execute_tools: bool = True,
     ) -> Response:
-        self.task = Task(description=messages[-1]["content"])
-        context_memory = self._build_context_from_message(messages)
-        if context_memory:
-            messages[-1]["content"] += (
-                "Here is the context for the task"
-                f"{context_memory}"
-            )
-
+        """
+        Execute the agent with the given messages and handle memory operations.
+        """
         if stream:
             return self.run_and_stream(
                 agent=agent,
@@ -312,14 +291,54 @@ class Swarm():
                 max_turns=max_turns,
                 execute_tools=execute_tools,
             )
+
+        # Initialize agent memories if needed
+        if agent.memory and any([agent.use_entity_memory, agent.use_long_term_memory, agent.use_short_term_memory]):
+            agent.initialize_memories()
+
         active_agent = agent
+        previous_agent = None
         context_variables = copy.deepcopy(context_variables)
         history = copy.deepcopy(messages)
         init_len = len(messages)
 
-        while len(history) - init_len < max_turns and active_agent:
+        # Get the main task description from the last user message
+        task_description = messages[-1].get("content", "") if messages else ""
 
-            # get completion with current history, agent
+        while len(history) - init_len < max_turns and active_agent:
+            # Track agent changes
+            if previous_agent and previous_agent != active_agent:
+                # Update memories for the previous agent before switching
+                partial_response = Response(
+                    messages=history[init_len:],
+                    agent=previous_agent,
+                    context_variables=context_variables,
+                )
+                self._update_memories(
+                    previous_agent, task_description, partial_response)
+
+                # Initialize memories for new agent if needed
+                if active_agent.memory and any([
+                    active_agent.use_entity_memory,
+                    active_agent.use_long_term_memory,
+                    active_agent.use_short_term_memory
+                ]):
+                    active_agent.initialize_memories()
+
+            # Build context from active agent's memories
+            memory_context = self._build_agent_context(
+                active_agent, task_description)
+            if memory_context:
+                last_msg = history[-1].copy()
+                last_msg["content"] = f"{last_msg.get('content', '')}\n{memory_context}"
+                history[-1] = last_msg
+
+            if memory_context:
+                printer.print(memory_context, 'green') 
+            else:
+                printer.print("No relevant context found in memory.", 'red')    
+                
+            # Get completion with current history, agent
             completion = self.get_chat_completion(
                 agent=active_agent,
                 history=history,
@@ -333,15 +352,16 @@ class Swarm():
             debug_print(debug, "Received completion:", message)
             message.sender = active_agent.name
 
-            history.append(
-                json.loads(message.model_dump_json())
-            )
+            history.append(json.loads(message.model_dump_json()))
 
             if not message.tool_calls or not execute_tools:
                 debug_print(debug, "Ending turn.")
                 break
 
-            # handle function calls, updating context_variables, and switching agents
+            # Store current agent before potential change
+            previous_agent = active_agent
+
+            # Handle function calls
             partial_response = self.handle_tool_calls(
                 message.tool_calls, active_agent.functions, context_variables, debug
             )
@@ -349,100 +369,111 @@ class Swarm():
             context_variables.update(partial_response.context_variables)
             if partial_response.agent:
                 active_agent = partial_response.agent
+
         response = Response(
             messages=history[init_len:],
             agent=active_agent,
             context_variables=context_variables,
         )
-        if self.memory:
-            self._udpate_long_term_memory(response)
-            # NOTE: consider adding short term memory
+
+        # Update memories for the final active agent
+        self._update_memories(active_agent, task_description, response)
+
         return response
 
-    def evaluate_task(self, task: Task, response: Response):
-        messages = response.messages
+    def _update_memories(self, agent: Agent, task_description: str, response: Response) -> None:
+        """Update agent's memories based on the interaction"""
+        if not agent.memory:
+            return
+
+        try:
+            # Evaluate task if long-term or entity memory is used
+            if agent.use_long_term_memory or agent.use_entity_memory:
+                evaluation = self._evaluate_response(
+                    task_description, response)
+
+                # Update long-term memory
+                if agent.use_long_term_memory:
+                    self._update_long_term_memory(
+                        agent, task_description, evaluation)
+
+                # Update entity memory
+                if agent.use_entity_memory:
+                    self._update_entity_memory(agent, evaluation)
+
+            # Update short-term memory
+            if agent.use_short_term_memory:
+                self._update_short_term_memory(
+                    agent, task_description, response)
+
+        except Exception as e:
+            print(f"Error updating memories: {str(e)}")
+
+    def _evaluate_response(self, task_description: str, response: Response) -> TaskEvaluation:
+        """Evaluate the task completion and return structured feedback"""
         evaluation_query = (
-            f"Assess the quality of the task completed based on the description, expected output, and actual message.\n\n"
-            f"Task Description:\n{task.description}\n\n"
-            f"Expected Output:\n{task.expected_output}\n\n" if hasattr(
-                task, "expected_output") else ""
-            f"Actual Output:\n{messages}\n\n"
+            f"Assess the quality of the task completed based on the description and actual messages.\n\n"
+            f"Task Description:\n{task_description}\n\n"
+            f"Actual Output:\n{response.messages}\n\n"
             "Please provide:\n"
             "- Bullet points suggestions to improve future similar tasks\n"
-            "- A score from 0 to 10 evaluating on completion, quality, and overall performance"
+            "- A score from 0 to 10 evaluating completion, quality, and overall performance\n"
             "- Entities extracted from the task output, if any, their type, description, and relationships"
         )
 
         instructions = (
-            "Convert all responses into valid JSON output follow by the following schema."
+            "Convert all responses into valid JSON output following this schema:\n"
             f"{TaskEvaluation.schema_json(indent=2)}"
         )
 
-        content = (
-            f"{evaluation_query}\n\n"
-            f"{instructions}"
-        )
-        response = completion(
+        content = f"{evaluation_query}\n\n{instructions}"
+
+        result = completion(
             model=response.agent.model,
             messages=[{"content": content, "role": "user"}],
-            response_format={
-                "type": "json_object",
+            response_format={"type": "json_object"}
+        )
+        
+        return TaskEvaluation.parse_raw(result.choices[0].message.content)
+
+    def _update_long_term_memory(self, agent: Agent, task: str, evaluation: TaskEvaluation) -> None:
+        """Update long-term memory with task results"""
+        memory_item = LongTermMemoryItem(
+            task=task,
+            agent=agent.name,
+            quality=evaluation.quality,
+            datetime=str(datetime.now()),
+            metadata={
+                "suggestions": evaluation.suggestions,
+                "quality": evaluation.quality
             }
         )
-        json_response = response.choices[0].message.content
-        evaluation = TaskEvaluation.parse_raw(json_response)
+        printer.print(f"Updating long-term memory\n\n{json.dumps(vars(memory_item), indent=4)}", 'cyan')
+        agent.long_term_memory.save(memory_item)
 
-        return evaluation
+    def _update_entity_memory(self, agent: Agent, evaluation: TaskEvaluation) -> None:
+        """Update entity memory with extracted entities"""
+        printer.print("Updating entity memory...\n\n", 'cyan')
+        for entity in evaluation.entities:
+            memory_item = EntityMemoryItem(
+                name=entity.name,
+                type=entity.type,
+                description=entity.description,
+                relationships=entity.relationships
+            )
+            printer.print(f"{json.dumps(vars(memory_item), indent=4)}\n\n", 'cyan')
+            agent.entity_memory.save(memory_item)
 
-    def _udpate_long_term_memory(self, output) -> None:
-        """Create and save long-term and entity memory items based on evaluation."""
-        if (
-            self.memory
-            and self._long_term_memory
-            and self._entity_memory
-        ):
-            try:
-                evaluation = self.evaluate_task(self.task, output)
-                long_term_memory = LongTermMemoryItem(
-                    task=self.task.description,
-                    agent=output.agent.name,
-                    quality=evaluation.quality,
-                    datetime=str(datetime.now()),
-                    expected_output="" if not hasattr(
-                        self.task, "expected_output") else self.task.expected_output,
-                    metadata={
-                        "suggestions": evaluation.suggestions,
-                        "quality": evaluation.quality,
-                    },
-                )
-                self._long_term_memory.save(long_term_memory)
-                for entity in evaluation.entities:
-                    entity_memory = EntityMemoryItem(
-                        name=entity.name,
-                        type=entity.type,
-                        description=entity.description,
-                        relationships="\n".join(
-                            [f"- {r}" for r in entity.relationships]
-                        ),
-                    )
-                    self._entity_memory.save(entity_memory)
-            except AttributeError as e:
-                print(f"Missing attributes for long term memory: {e}")
-            except Exception as e:
-                print(f"Failed to add to long term memory: {e}")
-
-    def _create_short_term_memory(self, output) -> None:
-        """Create and save a short-term memory item if conditions are met."""
-        if (self.memory):
-            try:
-                # TODO: update mechanism to extract value from output
-                value = output.messages[-1]["content"]
-                self._short_term_memory.save(
-                    value=value,
-                    metadata={
-                        "observation": self.task.description,
-                    },
-                    agent=output.agent.name,
-                )
-            except Exception as e:
-                print(f"Failed to add to short term memory: {e}")
+    def _update_short_term_memory(self, agent: Agent, task: str, response: Response) -> None:
+        """Update short-term memory with recent interaction"""
+        last_message = response.messages[-1].get(
+            "content", "") if response.messages else ""
+        memory_item = ShortTermMemoryItem(
+            data=last_message,
+            metadata={
+                "task": task,
+                "timestamp": str(datetime.now())
+            }
+        )
+        printer.print(f"Updating short-term memory\n\n{json.dumps(vars(memory_item), indent=4)}", 'cyan')
+        agent.short_term_memory.save(memory_item)

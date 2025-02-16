@@ -6,8 +6,8 @@ class LongTermMemoryItem:
         self,
         agent: str,
         task: str,
-        expected_output: str,
         datetime: str,
+        expected_output: Optional[str] = None,
         quality: Optional[Union[int, float]] = None,
         metadata: Optional[Dict[str, Any]] = None,
     ):

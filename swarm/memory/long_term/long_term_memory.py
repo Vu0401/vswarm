@@ -14,10 +14,10 @@ class LongTermMemory(Memory):
     LongTermMemoryItem instances.
     """
 
-    def __init__(self, storage=None, path=None):
+    def __init__(self, agent_name: str, storage=None, sql_connection_string=None):
         if not storage:
-            storage = SQLiteStorage(db_path=path) if path else SQLiteStorage()
-        super().__init__(storage)
+            storage = SQLiteStorage(db_path=sql_connection_string) if sql_connection_string else SQLiteStorage()
+        super().__init__(agent_name=agent_name, storage=storage)
 
     def save(self, item: LongTermMemoryItem) -> None:  
         metadata = item.metadata

@@ -1,23 +1,19 @@
-from abc import ABC, abstractmethod
+from abc import ABCMeta, abstractmethod
 
 
-class BaseStorage(ABC):
+class BaseStorage(metaclass=ABCMeta):
     """
     Base class for storage classes.
     """
 
     @abstractmethod
-    def _initialize_app(self):
-        raise NotImplementedError
-    
-    @abstractmethod
     def save(self):
         raise NotImplementedError
-    
+
     @abstractmethod
     def search(self):
         raise NotImplementedError
-    
+
     @abstractmethod
     def reset(self):
-        raise NotImplementedError   
+        raise NotImplementedError
