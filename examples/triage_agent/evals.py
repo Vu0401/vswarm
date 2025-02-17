@@ -1,4 +1,4 @@
-from swarm import OpenAISwarm
+from swarm import Swarm
 from agents import triage_agent, sales_agent, refunds_agent
 from evals_util import evaluate_with_llm_bool, BoolEvalResult
 import pytest

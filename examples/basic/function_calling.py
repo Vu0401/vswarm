@@ -1,4 +1,4 @@
-from swarm import OpenAISwarm, Agent
+from swarm import Swarm, Agent
 
 client = Swarm()
 
