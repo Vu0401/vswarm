@@ -1,163 +1,153 @@
-import contextlib
-import io
-import logging
-import os
-import shutil
+import chromadb
+from chromadb.config import Settings
+import json
+import datetime
 import uuid
-from typing import Any, Dict, List, Optional
-
-from .base_storage import BaseStorage
-
-from chromadb.api import ClientAPI
-
-from swarm.utilities import EmbeddingConfigurator
+from typing import List, Dict, Any, Optional
+from swarm.memory.storage.base_storage import BaseStorage
 from swarm.util import PATHS
 
 
-@contextlib.contextmanager
-def suppress_logging(
-    logger_name="chromadb.segment.impl.vector.local_persistent_hnsw",
-    level=logging.ERROR,
-):
-    logger = logging.getLogger(logger_name)
-    original_level = logger.getEffectiveLevel()
-    logger.setLevel(level)
-    with (
-        contextlib.redirect_stdout(io.StringIO()),
-        contextlib.redirect_stderr(io.StringIO()),
-        contextlib.suppress(UserWarning),
-    ):
-        yield
-    logger.setLevel(original_level)
-
-
 class RAGStorage(BaseStorage):
-    """
-    Extends Storage to handle embeddings for memory entries, improving
-    search efficiency.
-    """
+    def __init__(self, collection_name: str, chroma_client=None):
+        if chroma_client is None:
+            self.client = chromadb.PersistentClient(
+                path=PATHS.SHORT_TERM_STORAGE,
+                settings=Settings(
+                    allow_reset=True
+                ))
+        else:
+            self.client = chroma_client
 
-    app: ClientAPI | None = None
-
-    def __init__(
-        self, type, allow_reset=True, embedder_config=None
-    ):
-        '''
-        Args:
-            type: str - the type of storage to use
-            allow_reset: bool - whether to allow resetting the storage
-            embedder_config: dict - configuration for the embedder
-            e.g.
-                {
-                    "provider": "openai",
-                    "config": {
-                        "model": "text-embedding-3-small",
-                        "api_key": "your_openai_api_key"
-                    }
-                }
-
-        '''
-        self.storage_file_name = PATHS.SHORT_TERM_STORAGE
-
-        self.type = type
-        self.embedder_config = embedder_config
-        self.allow_reset = allow_reset
-        self._initialize_app()
-
-    def _set_embedder_config(self):
-        configurator = EmbeddingConfigurator()
-        self.embedder_config = configurator.configure_embedder(
-            self.embedder_config)
-
-    def _initialize_app(self):
-        import chromadb
-        from chromadb.config import Settings
-        self._set_embedder_config()
-        chroma_client = chromadb.PersistentClient(
-            path=self.storage_file_name,
-            settings=Settings(allow_reset=self.allow_reset),
+        # Get or create collection
+        collection_name = self._validate_collection_name(collection_name)
+        self.collection = self.client.get_or_create_collection(
+            name=collection_name,
+            metadata={"hnsw:space": "cosine"}
         )
 
-        self.app = chroma_client
+    def _generate_id(self, key: str) -> str:
+        """Generate a unique ID for ChromaDB based on the key"""
+        return str(uuid.uuid5(uuid.NAMESPACE_DNS, key))
 
-        try:
-            self.collection = self.app.get_collection(
-                name=self.type, embedding_function=self.embedder_config
-            )
-        except Exception:
-            self.collection = self.app.create_collection(
-                name=self.type, embedding_function=self.embedder_config
-            )
+    def save(self, key: str, value: Any, metadata: Dict = None) -> None:
+        # Convert value to string if it's not already
+        if not isinstance(value, str):
+            if isinstance(value, dict):
+                text_value = json.dumps(value)
+            else:
+                text_value = str(value)
+        else:
+            text_value = value
 
-    def save(self, value: Any, metadata: Dict[str, Any]) -> None:
-        if not hasattr(self, "app") or not hasattr(self, "collection"):
-            self._initialize_app()
-        try:
-            self._add_embedding_to_collection(value, metadata)
-        except Exception as e:
-            logging.error(f"Error during {self.type} save: {str(e)}")
+        # Prepare metadata
+        if metadata is None:
+            metadata = {}
 
-    def _add_embedding_to_collection(self, text: str, metadata: Dict[str, Any]) -> None:
-        if not hasattr(self, "app") or not hasattr(self, "collection"):
-            self._initialize_app()
+        metadata["key"] = key
+        metadata["timestamp"] = datetime.datetime.now().isoformat()
 
-        self.collection.add(
-            documents=[text],
-            metadatas=[metadata or {}],
-            ids=[str(uuid.uuid4())],
+        # Generate a unique ID based on the key
+        doc_id = self._generate_id(key)
+
+        # Add or update the document
+        self.collection.upsert(
+            ids=[doc_id],
+            documents=[text_value],
+            metadatas=[metadata]
         )
+
 
     def search(
         self,
-        query: str,
-        limit: int = 3,
-        score_threshold: float = 0.35,
-    ) -> List[Any]:
-        if not hasattr(self, "app"):
-            self._initialize_app()
-
-        try:
-            with suppress_logging():
-                response = self.collection.query(
-                    query_texts=query, n_results=limit)
-
-            results = []
-            for i in range(len(response["ids"][0])):
-                result = {
-                    "id": response["ids"][0][i],
-                    "metadata": response["metadatas"][0][i],
-                    "context": response["documents"][0][i],
-                    "score": response["distances"][0][i],
+        text: Optional[str] = None,
+        key: Optional[str] = None,
+        metadata: Optional[Dict] = None,
+        limit: Optional[int] = 5
+    ) -> List[Dict]:
+        """
+        Search documents by text similarity, key, or metadata.
+        
+        Args:
+            text: Optional text to search for using vector similarity
+            key: Optional key for exact match lookup
+            metadata: Optional metadata filter criteria
+            limit: Maximum number of results for text search (default: 5)
+            
+        Returns:
+            List of matching documents with their metadata
+        """
+        if text is not None:
+            # Vector similarity search
+            results = self.collection.query(
+                query_texts=[text],
+                n_results=limit,
+                where=metadata
+            )
+            return [
+                {
+                    'id': results['ids'][0][i],
+                    'documents': results['documents'][0][i],
+                    'metadata': results['metadatas'][0][i],
+                    'distance': results['distances'][0][i] if 'distances' in results else None
                 }
-                if result["score"] >= score_threshold:
-                    results.append(result)
-            return results
-        except Exception as e:
-            logging.error(f"Error during {self.type} search: {str(e)}")
-            return []
+                for i in range(len(results['ids'][0]))
+            ]
+        
+        elif key is not None:
+            # Direct key lookup
+            results = self.collection.get(where={"key": key})
+        else:
+            # Metadata-based lookup or empty query
+            if metadata is None:
+                return []
+            results = self.collection.get(where=metadata)
+        
+        # Format results for key and metadata searches
+        return [
+            {
+                'id': results['ids'][i],
+                'documents': results['documents'][i],
+                'metadata': results['metadatas'][i]
+            }
+            for i in range(len(results['ids']))
+        ]
+    
+    def update(self, key: str, value: Any, metadata: Dict = None) -> None:
+        # For ChromaDB, use upsert which handles both insert and update
+        self.save(key, value, metadata)
+
+    def delete(self, key: str) -> None:
+        doc_id = self._generate_id(key)
+        self.collection.delete(ids=[doc_id])
 
     def reset(self) -> None:
-        try:
-            if self.app:
-                self.app.reset()
-                shutil.rmtree(self.storage_file_name)
-                self.app = None
-                self.collection = None
-        except Exception as e:
-            if "attempt to write a readonly database" in str(e):
-                # Ignore this specific error
-                pass
-            else:
-                raise Exception(
-                    f"An error occurred while resetting the {
-                        self.type} memory: {e}"
-                )
+        self.collection.delete(where={})
 
-    def _create_default_embedding_function(self):
-        from chromadb.utils.embedding_functions.openai_embedding_function import (
-            OpenAIEmbeddingFunction,
-        )
+    def _validate_collection_name(self, collection_name: str) -> str:
+        '''
+            (1) contains 3-63 characters, # Pass
+            (2) starts and ends with an alphanumeric character, # Pass 
+            (3) otherwise contains only alphanumeric characters, underscores or hyphens (-), 
+            (4) contains no two consecutive periods (..) and 
+            (5) is not a valid IPv4 address
+        '''
 
-        return OpenAIEmbeddingFunction(
-            api_key=os.getenv("OPENAI_API_KEY"), model_name="text-embedding-3-small"
-        )
+        collection_name = collection_name.strip().lower()
+        # use regex to replace all non-alphanumeric or space characters with a underscore
+        import re
+        collection_name = re.sub(r'[^a-z0-9]+', '_', collection_name)
+        # remove all consecutive underscores
+        collection_name = re.sub(r'_+', '_', collection_name)
+        # remove all trailing underscores
+        collection_name = collection_name.strip('_')
+        # ensure the name is not a valid IPv4 address
+        if re.match(r'^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$', collection_name):
+            raise ValueError('Collection name cannot be a valid IPv4 address')
+        # ensure the name is not empty
+        if not collection_name:
+            raise ValueError('Collection name cannot be empty')
+        return collection_name
+
+        
+        

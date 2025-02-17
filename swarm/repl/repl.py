@@ -1,6 +1,6 @@
 import json
 
-from swarm import OpenAISwarm
+from swarm import Swarm
 
 
 def process_and_print_streaming_response(response):
