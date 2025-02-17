@@ -44,8 +44,7 @@ class SQLiteStorage(BaseStorage):
                 conn.commit()
         except sqlite3.Error as e:
             self._printer.print(
-                content=f"MEMORY ERROR: An error occurred during database initialization: {
-                    e}",
+                content=f"MEMORY ERROR: An error occurred during database initialization: {e}",
                 color="red",
             )
 
@@ -70,8 +69,7 @@ class SQLiteStorage(BaseStorage):
                 conn.commit()
         except sqlite3.Error as e:
             self._printer.print(
-                content=f"MEMORY ERROR: An error occurred while saving to LTM: {
-                    e}",
+                content=f"MEMORY ERROR: An error occurred while saving to LTM: {e}",
                 color="red",
             )
 
@@ -105,8 +103,7 @@ class SQLiteStorage(BaseStorage):
 
         except sqlite3.Error as e:
             self._printer.print(
-                content=f"MEMORY ERROR: An error occurred while querying LTM: {
-                    e}",
+                content=f"MEMORY ERROR: An error occurred while querying LTM: {e}",
                 color="red",
             )
         return None
@@ -123,8 +120,7 @@ class SQLiteStorage(BaseStorage):
 
         except sqlite3.Error as e:
             self._printer.print(
-                content=f"MEMORY ERROR: An error occurred while deleting all rows in LTM: {
-                    e}",
+                content=f"MEMORY ERROR: An error occurred while deleting all rows in LTM: {e}",
                 color="red",
             )
         return None
