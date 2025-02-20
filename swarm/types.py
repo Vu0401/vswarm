@@ -23,7 +23,7 @@ class Agent(BaseModel):
     functions: List[AgentFunction] = []
     tool_choice: str = "auto"
     parallel_tool_calls: bool = True
-
+    model_config: dict = {}
     # Memory flags
     memory: bool = False
     use_short_term_memory: bool = False
